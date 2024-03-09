@@ -6,7 +6,7 @@ import React, {
 	useState,
 } from 'react';
 import Select from 'react-select';
-import { Alert, Button, Form } from 'react-bootstrap';
+import { Alert, Button, Form, Row } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import zip from 'lodash/zip';
 import omit from 'lodash/omit';
@@ -139,6 +139,13 @@ export default function MultiMappingPage() {
 	return (
 		<>
 			<Section title={t('MultiMapping:header-text')}>
+				<Row className="mb-3">
+					<p>
+						{t(
+							'MultiMapping:profile-limitation',
+						)}
+					</p>
+				</Row>
 				<Form onSubmit={handleSubmit}>
 					<div className="gx-3">
 						{pinList.map(([cell1, cell2], i) => (
