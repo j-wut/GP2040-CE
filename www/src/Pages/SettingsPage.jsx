@@ -12,7 +12,7 @@ import isNil from 'lodash/isNil';
 import './SettingsPage.scss';
 import Section from '../Components/Section';
 import WebApi, { baseButtonMappings } from '../Services/WebApi';
-import { BUTTON_MASKS, BUTTON_MASKS_OPTIONS, getButtonLabels } from '../Data/Buttons';
+import { BUTTON_MASKS_OPTIONS, getButtonLabels } from '../Data/Buttons';
 
 
 const SHA256 = (ascii) => {
@@ -1201,7 +1201,7 @@ export default function SettingsPage() {
 														</Form.Control.Feedback>
 													</Col>
 													<Col sm="auto">+</Col>
-													{BUTTON_MASKS.map((mask) =>
+													{BUTTON_MASKS_OPTIONS.map((mask) =>
 														values[o] && values[o]?.buttonsMask & mask.value ? (
 															[
 																<Col sm="auto">
@@ -1224,7 +1224,7 @@ export default function SettingsPage() {
 																			);
 																		}}
 																	>
-																		{BUTTON_MASKS.map((o, i2) => (
+																		{BUTTON_MASKS_OPTIONS.map((o, i2) => (
 																			<option
 																				key={`hotkey-${i}-button${i2}`}
 																				value={o.value}
@@ -1254,7 +1254,7 @@ export default function SettingsPage() {
 																);
 															}}
 														>
-															{BUTTON_MASKS.map((o, i2) => (
+															{BUTTON_MASKS_OPTIONS.map((o, i2) => (
 																<option
 																	key={`hotkey-${i}-buttonZero-${i2}`}
 																	value={o.value}
