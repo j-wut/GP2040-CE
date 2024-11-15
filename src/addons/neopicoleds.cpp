@@ -124,7 +124,7 @@ PLEDAnimationState getXBoneAnimationNEOPICO(Gamepad * gamepad)
 		.animation = PLED_ANIM_OFF
 	};
 
-	if ( gamepad->auxState.playerID.ledValue == 1 ) { 
+	if ( gamepad->auxState.playerID.ledValue == 1 ) {
 		animationState.animation = PLED_ANIM_SOLID;
 	}
 
@@ -584,8 +584,8 @@ uint8_t NeoPicoLEDAddon::setupButtonPositions()
 	uint8_t buttonCount = 0;
 	for (auto const& buttonPosition : buttonPositions)
 	{
-		if (buttonPosition.second > -1)
-			buttonCount++;
+		if (buttonPosition.second > buttonCount)
+			buttonCount = buttonPosition.second;
 	}
 
 	return buttonCount;
