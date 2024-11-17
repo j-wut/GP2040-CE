@@ -309,9 +309,8 @@ void NeoPicoLEDAddon::process()
 	this->nextRunTime = make_timeout_time_ms(NeoPicoLEDAddon::intervalMS);
 }
 
-std::vector<uint8_t> * NeoPicoLEDAddon::getLEDPositions(string button, std::vector<std::vector<uint8_t>> *positions)
+std::vector<uint8_t> * NeoPicoLEDAddon::getLEDPositions(int buttonPosition, std::vector<std::vector<uint8_t>> *positions)
 {
-	int buttonPosition = buttonPositions[button];
 	if (buttonPosition < 0)
 		return &EMPTY_VECTOR;
 	else
@@ -320,7 +319,7 @@ std::vector<uint8_t> * NeoPicoLEDAddon::getLEDPositions(string button, std::vect
 
 // Macro for Pixel() declarations
 #define PIXEL(BUTTON, MASK) \
-	Pixel(buttonPositions[BUTTON], MASK, *getLEDPositions(BUTTON, positions))
+	Pixel(buttonPositions[BUTTON], MASK, *getLEDPositions(buttonPositions[BUTTON], positions))
 
 /**
  * @brief Create an LED layout using a 2x4 matrix.
@@ -518,6 +517,9 @@ std::vector<std::vector<Pixel>> NeoPicoLEDAddon::generatedLEDWasdFBM(std::vector
 	return pixels;
 }
 
+#define BUTTONLESS_PIXEL(INDEX) \
+	Pixel(INDEX, 0U, *getLEDPositions(INDEX, &positions))
+
 std::vector<std::vector<Pixel>> NeoPicoLEDAddon::createLEDLayout(ButtonLayout layout, uint8_t ledsPerPixel, uint8_t ledButtonCount)
 {
 	vector<vector<uint8_t>> positions(ledButtonCount);
@@ -528,6 +530,8 @@ std::vector<std::vector<Pixel>> NeoPicoLEDAddon::createLEDLayout(ButtonLayout la
 			positions[i][l] = (i * ledsPerPixel) + l;
 	}
 
+	std::vector<std::vector<Pixel>> pixels;
+
 	switch (static_cast<ButtonLayout>(layout))
 	{
 		case BUTTON_LAYOUT_STICKLESS:
@@ -537,12 +541,15 @@ std::vector<std::vector<Pixel>> NeoPicoLEDAddon::createLEDLayout(ButtonLayout la
 		case BUTTON_LAYOUT_STICKLESS_16:
 		case BUTTON_LAYOUT_STICKLESS_R16:
 		case BUTTON_LAYOUT_BOARD_DEFINED_A:
-			return generatedLEDStickless(&positions);
+			pixels = generatedLEDStickless(&positions);
+			break;
 		case BUTTON_LAYOUT_FIGHTBOARD_MIRRORED:
-			return generatedLEDWasdFBM(&positions);
+			pixels = generatedLEDWasdFBM(&positions);
+			break;
 		case BUTTON_LAYOUT_BUTTONS_ANGLED:
 		case BUTTON_LAYOUT_FIGHTBOARD_STICK:
-			return generatedLEDWasd(&positions);
+			pixels = generatedLEDWasd(&positions);
+			break;
 		case BUTTON_LAYOUT_BLANKA:
 		case BUTTON_LAYOUT_BUTTONS_BASIC:
 		case BUTTON_LAYOUT_KEYBOARD_ANGLED:
@@ -552,8 +559,31 @@ std::vector<std::vector<Pixel>> NeoPicoLEDAddon::createLEDLayout(ButtonLayout la
 		case BUTTON_LAYOUT_ARCADE:
 		case BUTTON_LAYOUT_VLXA:
 		default:
-			return generatedLEDButtons(&positions);
+			pixels = generatedLEDButtons(&positions);
+			break;
 	}
+
+	if (buttonPositions.size() < ledButtonCount)
+	{
+		int pixSize = pixels.size();
+		pixels.resize(pixSize + 1);
+		vector<bool> usedButtonIndex(ledButtonCount, false);
+
+		for (auto const &buttonPosition : buttonPositions)
+		{
+			usedButtonIndex[buttonPosition.second] = true;
+		}
+
+		uint8_t blankInd = 0;
+		for (int i = 0; i < ledButtonCount; i++)
+		{
+			if (usedButtonIndex[i])
+				continue;
+			pixels[pixSize].resize(++blankInd, BUTTONLESS_PIXEL(i));
+		}
+	}
+
+	return pixels;
 
 	assert(false);
 	return std::vector<std::vector<Pixel>>();
@@ -584,8 +614,8 @@ uint8_t NeoPicoLEDAddon::setupButtonPositions()
 	uint8_t buttonCount = 0;
 	for (auto const& buttonPosition : buttonPositions)
 	{
-		if (buttonPosition.second > buttonCount)
-			buttonCount = buttonPosition.second;
+		if (buttonPosition.second >= buttonCount)
+			buttonCount = buttonPosition.second + 1;
 	}
 
 	return buttonCount;

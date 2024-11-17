@@ -181,7 +181,7 @@ public:
 	void configureLEDs();
 	uint32_t frame[100];
 private:
-	std::vector<uint8_t> * getLEDPositions(std::string button, std::vector<std::vector<uint8_t>> *positions);
+	std::vector<uint8_t> * getLEDPositions(int buttonIndex, std::vector<std::vector<uint8_t>> *positions);
 	std::vector<std::vector<Pixel>> generatedLEDButtons(std::vector<std::vector<uint8_t>> *positions);
 	std::vector<std::vector<Pixel>> generatedLEDStickless(std::vector<std::vector<uint8_t>> *positions);
 	std::vector<std::vector<Pixel>> generatedLEDWasd(std::vector<std::vector<uint8_t>> *positions);
