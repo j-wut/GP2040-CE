@@ -53,7 +53,7 @@ void PinViewerScreen::drawScreen() {
 
 int8_t PinViewerScreen::update() {
     if (DriverManager::getInstance().isConfigMode()) {
-        uint16_t buttonState = getGamepad()->state.buttons;
+        uint16_t buttonState = getProcessedGamepad()->state.buttons;
         if (prevButtonState && !buttonState) {
             if (prevButtonState == GAMEPAD_MASK_A2) {
                 prevButtonState = 0;

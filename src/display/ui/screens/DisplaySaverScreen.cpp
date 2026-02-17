@@ -52,7 +52,7 @@ void DisplaySaverScreen::drawScreen() {
 
 int8_t DisplaySaverScreen::update() {
     if (!DriverManager::getInstance().isConfigMode()) {
-        Gamepad * gamepad = Storage::getInstance().GetGamepad();
+        Gamepad * gamepad = getProcessedGamepad();
         
         if (gamepad->state.buttons || gamepad->state.dpad) {
             return DisplayMode::BUTTONS;

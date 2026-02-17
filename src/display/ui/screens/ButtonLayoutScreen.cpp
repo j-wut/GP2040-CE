@@ -121,8 +121,8 @@ int8_t ButtonLayoutScreen::update() {
 		processInputHistory();
 
     // check for exit/screen change
-    if (DriverManager::getInstance().isConfigMode()) {
-        uint16_t buttonState = getGamepad()->state.buttons;
+    if (configMode) {
+        uint16_t buttonState = getProcessedGamepad()->state.buttons;
         if (prevButtonState && !buttonState) {
             if (prevButtonState == GAMEPAD_MASK_B1) {
                 prevButtonState = 0;
