@@ -310,22 +310,10 @@ void GP2040::run() {
 		// Process USB Host on Core0
 		USBHostManager::getInstance().process();
 
-		// Config Loop (Web-Config skips Core0 add-ons)
-		if (configMode == true) {
-			inputDriver->process(gamepad);
-			rebootHotkeys.process(gamepad, configMode);
-			checkSaveRebootState();
-			continue;
-		}
-
 		// Pre-Process add-ons for MPGS
 		addons.PreprocessAddons();
 
-		
-
 		gamepad->process(); // process through MPGS
-
-		
 
 		// (Post) Process for add-ons
 		addons.ProcessAddons();
@@ -340,6 +328,15 @@ void GP2040::run() {
 
 		// Process Input Driver
 		bool processed = inputDriver->process(gamepad);
+
+		// Config Loop (Web-Config skips Core0 add-ons)
+		if (configMode == true) {
+			inputDriver->process(gamepad);
+			rebootHotkeys.process(gamepad, configMode);
+			checkSaveRebootState();
+			continue;
+		}
+
 
 		// TinyUSB Task update
 		tud_task();

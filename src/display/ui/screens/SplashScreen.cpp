@@ -31,7 +31,7 @@ int8_t SplashScreen::update() {
             return DisplayMode::BUTTONS;
         }
     } else {
-        uint16_t buttonState = getGamepad()->state.buttons;
+        uint16_t buttonState = getProcessedGamepad()->state.buttons;
         if (prevButtonState && !buttonState) {
             if (prevButtonState == GAMEPAD_MASK_B2) {
                 prevButtonState = 0;

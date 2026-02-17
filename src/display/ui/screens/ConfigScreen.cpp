@@ -12,7 +12,7 @@ void ConfigScreen::shutdown() {
 }
 
 int8_t ConfigScreen::update() {
-    uint16_t buttonState = getGamepad()->state.buttons;
+    uint16_t buttonState = getProcessedGamepad()->state.buttons;
     if (prevButtonState && !buttonState) {
         switch (prevButtonState) {
             case (GAMEPAD_MASK_B1):
