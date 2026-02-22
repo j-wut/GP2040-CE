@@ -2606,6 +2606,7 @@ std:: string getJoystickCenter() {
     } else {
         // Initialize ADC if not already initialized
         adc_init();
+	    adc_set_clkdiv(0);
         
         // Check if specific stick is requested via query parameter
         // For now, we'll read both sticks and return the appropriate one
@@ -2652,6 +2653,7 @@ std:: string getJoystickCenter2() {
     } else {
         // Initialize ADC if not already initialized
         adc_init();
+	    adc_set_clkdiv(0);
         
         // Read second stick X/Y
         if (isValidPin(analogOptions.analogAdc2PinX)) {

@@ -98,6 +98,7 @@ void GP2040::setup() {
 
 	// Initialize our ADC (various add-ons)
 	adc_init();
+	adc_set_clkdiv(0);
 
 	// Setup Add-ons
 	addons.LoadUSBAddon(new KeyboardHostAddon());
