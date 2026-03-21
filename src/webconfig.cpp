@@ -1708,6 +1708,21 @@ std::string setAddonOptions()
     docToValue(analogOptions.analog_error2, doc, "analog_error2");
     docToValue(analogOptions.enabled, doc, "AnalogInputEnabled");
 
+    docToValue(analogOptions.analog_mux_channels, doc, "analog_mux_channels");
+    docToPin(analogOptions.analogSelectPin0, doc, "analogSelectPin0");
+    docToPin(analogOptions.analogSelectPin1, doc, "analogSelectPin1");
+    docToPin(analogOptions.analogSelectPin2, doc, "analogSelectPin2");
+    docToPin(analogOptions.analogSelectPin3, doc, "analogSelectPin3");
+
+    docToValue(analogOptions.analog_mux_1, doc, "analog_mux_1");
+    docToValue(analogOptions.analog_channel_x_1, doc, "analog_channel_x_1");
+    docToValue(analogOptions.analog_channel_y_1, doc, "analog_channel_y_1");
+    
+    docToValue(analogOptions.analog_mux_2, doc, "analog_mux_2");
+    docToValue(analogOptions.analog_channel_x_2, doc, "analog_channel_x_2");
+    docToValue(analogOptions.analog_channel_y_2, doc, "analog_channel_y_2");
+
+
     BootselButtonOptions& bootselButtonOptions = Storage::getInstance().getAddonOptions().bootselButtonOptions;
     docToValue(bootselButtonOptions.buttonMap, doc, "bootselButtonMap");
     docToValue(bootselButtonOptions.enabled, doc, "BootselButtonAddonEnabled");
@@ -2598,12 +2613,45 @@ std:: string getJoystickCenter() {
     uint16_t x = 0, y = 0;
     bool success = true;
     std::string error_msg = "";
+    int selectPins;
+    Pin_t selectPinArray[4];
     
     // Check if analog input is enabled
     if (!analogOptions.enabled) {
         success = false;
         error_msg = "Analog input is not enabled";
     } else {
+        
+        if (analogOptions.analog_mux_2) {
+            switch(analogOptions.analog_mux_channels) {
+                case 4:
+                    selectPins = 2;
+                    break;
+                case 8:
+                    selectPins = 3;
+                    break;
+                case 16:
+                    selectPins = 4;
+                    break;
+                case 1:
+                default:
+                    selectPins = 0;
+                    break;
+            }
+
+            selectPinArray[0] = analogOptions.analogSelectPin0;
+            selectPinArray[1] = analogOptions.analogSelectPin1;
+            selectPinArray[2] = analogOptions.analogSelectPin2;
+            selectPinArray[3] = analogOptions.analogSelectPin3;
+            for(int i = 0; i < selectPins; i++) {
+                if ( selectPinArray[i] != -1 ) {
+                    gpio_init(selectPinArray[i]);
+                    gpio_set_dir(selectPinArray[i], GPIO_OUT);
+                    gpio_put(selectPinArray[i], 0);
+                }
+            }
+        }
+
         // Initialize ADC if not already initialized
         adc_init();
         
@@ -2613,11 +2661,25 @@ std:: string getJoystickCenter() {
         
         // Read first stick X/Y
         if (isValidPin(analogOptions.analogAdc1PinX)) {
+            if(analogOptions.analog_mux_1) {
+                for(int i = 0; i < selectPins; i++) {
+                    if ( selectPinArray[i] != -1 ) {
+                        gpio_put(selectPinArray[i], (analogOptions.analog_channel_x_1 >> i) & 0x01);
+                    }   
+                }
+            }
             adc_gpio_init(analogOptions.analogAdc1PinX);
             adc_select_input(analogOptions.analogAdc1PinX - 26);
             x = adc_read();
         }
         if (isValidPin(analogOptions.analogAdc1PinY)) {
+            if(analogOptions.analog_mux_1) {
+                for(int i = 0; i < selectPins; i++) {
+                    if ( selectPinArray[i] != -1 ) {
+                        gpio_put(selectPinArray[i], (analogOptions.analog_channel_y_1 >> i) & 0x01);
+                    }   
+                }
+            }
             adc_gpio_init(analogOptions.analogAdc1PinY);
             adc_select_input(analogOptions.analogAdc1PinY - 26);
             y = adc_read();
@@ -2644,22 +2706,69 @@ std:: string getJoystickCenter2() {
     uint16_t x = 0, y = 0;
     bool success = true;
     std::string error_msg = "";
+    int selectPins;
+    Pin_t selectPinArray[4];
     
     // Check if analog input is enabled
     if (!analogOptions.enabled) {
         success = false;
         error_msg = "Analog input is not enabled";
     } else {
+
+        if (analogOptions.analog_mux_2) {
+            switch(analogOptions.analog_mux_channels) {
+                case 4:
+                    selectPins = 2;
+                    break;
+                case 8:
+                    selectPins = 3;
+                    break;
+                case 16:
+                    selectPins = 4;
+                    break;
+                case 1:
+                default:
+                    selectPins = 0;
+                    break;
+            }
+
+            selectPinArray[0] = analogOptions.analogSelectPin0;
+            selectPinArray[1] = analogOptions.analogSelectPin1;
+            selectPinArray[2] = analogOptions.analogSelectPin2;
+            selectPinArray[3] = analogOptions.analogSelectPin3;
+            for(int i = 0; i < selectPins; i++) {
+                if ( selectPinArray[i] != -1 ) {
+                    gpio_init(selectPinArray[i]);
+                    gpio_set_dir(selectPinArray[i], GPIO_OUT);
+                    gpio_put(selectPinArray[i], 0);
+                }
+            }
+        }
+
         // Initialize ADC if not already initialized
         adc_init();
         
         // Read second stick X/Y
         if (isValidPin(analogOptions.analogAdc2PinX)) {
+            if(analogOptions.analog_mux_2) {
+                for(int i = 0; i < selectPins; i++) {
+                    if ( selectPinArray[i] != -1 ) {
+                        gpio_put(selectPinArray[i], (analogOptions.analog_channel_x_2 >> i) & 0x01);
+                    }   
+                }
+            }
             adc_gpio_init(analogOptions.analogAdc2PinX);
             adc_select_input(analogOptions.analogAdc2PinX - 26);
             x = adc_read();
         }
         if (isValidPin(analogOptions.analogAdc2PinY)) {
+            if(analogOptions.analog_mux_2) {
+                for(int i = 0; i < selectPins; i++) {
+                    if ( selectPinArray[i] != -1 ) {
+                        gpio_put(selectPinArray[i], (analogOptions.analog_channel_y_2 >> i) & 0x01);
+                    }   
+                }
+            }
             adc_gpio_init(analogOptions.analogAdc2PinY);
             adc_select_input(analogOptions.analogAdc2PinY - 26);
             y = adc_read();

@@ -71,7 +71,7 @@ void AnalogInput::setup() {
     }
 
     if (adc_pairs[0].use_mux || adc_pairs[1].use_mux) {
-        switch(analogOptions.analog_channels) {
+        switch(analogOptions.analog_mux_channels) {
             case 4:
                 this->selectPins = 2;
                 break;
@@ -87,10 +87,10 @@ void AnalogInput::setup() {
                 break;
         }
 
-        selectPinArray[0] = analogOptions.selectPin0;
-        selectPinArray[1] = analogOptions.selectPin1;
-        selectPinArray[2] = analogOptions.selectPin2;
-        selectPinArray[3] = analogOptions.selectPin3;
+        selectPinArray[0] = analogOptions.analogSelectPin0;
+        selectPinArray[1] = analogOptions.analogSelectPin1;
+        selectPinArray[2] = analogOptions.analogSelectPin2;
+        selectPinArray[3] = analogOptions.analogSelectPin3;
         for(int i = 0; i < selectPins; i++) {
             if ( selectPinArray[i] != -1 ) {
                 gpio_init(selectPinArray[i]);

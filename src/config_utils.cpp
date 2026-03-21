@@ -623,11 +623,11 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, forced_circularity2, !!FORCED_CIRCULARITY2_ENABLED);
     
     // analog with mux
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_channels, ANALOG_CHANNELS);
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, selectPin0, ANALOG_DEFAULT_SELECT_PIN);
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, selectPin1, ANALOG_DEFAULT_SELECT_PIN);
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, selectPin2, ANALOG_DEFAULT_SELECT_PIN);
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, selectPin3, ANALOG_DEFAULT_SELECT_PIN);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_mux_channels, ANALOG_MUX_CHANNELS);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analogSelectPin0, ANALOG_DEFAULT_SELECT_PIN);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analogSelectPin1, ANALOG_DEFAULT_SELECT_PIN);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analogSelectPin2, ANALOG_DEFAULT_SELECT_PIN);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analogSelectPin3, ANALOG_DEFAULT_SELECT_PIN);
 
     INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_mux_1, !!ANALOG_MUX_1_ENABLED);
     INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_channel_x_1, ANALOG_MUX_CHANNEL_X_DEFAULT);
