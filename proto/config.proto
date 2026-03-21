@@ -425,6 +425,20 @@ message AnalogOptions
     optional uint32 joystick_center_y = 25;
     optional uint32 joystick_center_x2 = 26;
     optional uint32 joystick_center_y2 = 27;
+
+    optional uint32 analog_channels = 28;
+    optional uint32 selectPin0 = 29;
+    optional uint32 selectPin1 = 30;
+    optional uint32 selectPin2 = 31;
+    optional uint32 selectPin3 = 32;
+
+    optional bool analog_mux_1 = 33;
+    optional uint32 analog_channel_x_1 = 34;
+    optional uint32 analog_channel_y_1 = 35;
+
+    optional bool analog_mux_2 = 36;
+    optional uint32 analog_channel_x_2 = 37;
+    optional uint32 analog_channel_y_2 = 38;
 }
 
 message TurboOptions

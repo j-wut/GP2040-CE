@@ -35,6 +35,10 @@ void AnalogInput::setup() {
     adc_pairs[0].forced_circularity = analogOptions.forced_circularity;
     adc_pairs[0].joystick_center_x = analogOptions.joystick_center_x;
     adc_pairs[0].joystick_center_y = analogOptions.joystick_center_y;
+    adc_pairs[0].use_mux = analogOptions.analog_mux_1;
+    adc_pairs[0].mux_channel_x = analogOptions.analog_channel_x_1;
+    adc_pairs[0].mux_channel_y = analogOptions.analog_channel_y_1;
+
     adc_pairs[1].x_pin = analogOptions.analogAdc2PinX;
     adc_pairs[1].y_pin = analogOptions.analogAdc2PinY;
     adc_pairs[1].analog_invert = analogOptions.analogAdc2Invert;
@@ -48,6 +52,9 @@ void AnalogInput::setup() {
     adc_pairs[1].forced_circularity = analogOptions.forced_circularity2;
     adc_pairs[1].joystick_center_x = analogOptions.joystick_center_x2;
     adc_pairs[1].joystick_center_y = analogOptions.joystick_center_y2;
+    adc_pairs[1].use_mux = analogOptions.analog_mux_2;
+    adc_pairs[1].mux_channel_x = analogOptions.analog_channel_x_2;
+    adc_pairs[1].mux_channel_y = analogOptions.analog_channel_y_2;
     
 
     // Setup defaults and helpers
@@ -63,11 +70,44 @@ void AnalogInput::setup() {
         adc_pairs[i].y_ema = 0.0f;
     }
 
+    if (adc_pairs[0].use_mux || adc_pairs[1].use_mux) {
+        switch(analogOptions.analog_channels) {
+            case 4:
+                this->selectPins = 2;
+                break;
+            case 8:
+                this->selectPins = 3;
+                break;
+            case 16:
+                this->selectPins = 4;
+                break;
+            case 1:
+            default:
+                this->selectPins = 0;
+                break;
+        }
+
+        selectPinArray[0] = analogOptions.selectPin0;
+        selectPinArray[1] = analogOptions.selectPin1;
+        selectPinArray[2] = analogOptions.selectPin2;
+        selectPinArray[3] = analogOptions.selectPin3;
+        for(int i = 0; i < selectPins; i++) {
+            if ( selectPinArray[i] != -1 ) {
+                gpio_init(selectPinArray[i]);
+                gpio_set_dir(selectPinArray[i], GPIO_OUT);
+                gpio_put(selectPinArray[i], 0);
+            }
+        }
+    }
+
     // Intialize and auto center X/Y for each pair
     for (int i = 0; i < ADC_COUNT; i++) {
         if(isValidPin(adc_pairs[i].x_pin)) {
             adc_gpio_init(adc_pairs[i].x_pin);
             if (adc_pairs[i].auto_calibration) {
+                if(adc_pairs[i].use_mux) {
+                    selectChannel(adc_pairs[i].mux_channel_x);
+                }
                 adc_select_input(adc_pairs[i].x_pin - ADC_PIN_OFFSET);
                 adc_pairs[i].x_center = adc_read();
             } else {
@@ -78,6 +118,9 @@ void AnalogInput::setup() {
         if(isValidPin(adc_pairs[i].y_pin)) {
             adc_gpio_init(adc_pairs[i].y_pin);
             if (adc_pairs[i].auto_calibration) {
+                if(adc_pairs[i].use_mux) {
+                    selectChannel(adc_pairs[i].mux_channel_y);
+                }
                 adc_select_input(adc_pairs[i].y_pin - ADC_PIN_OFFSET);
                 adc_pairs[i].y_center = adc_read();
             } else {
@@ -85,6 +128,14 @@ void AnalogInput::setup() {
                 adc_pairs[i].y_center = adc_pairs[i].joystick_center_y;
             }
         }
+    }
+}
+
+void AnalogInput::selectChannel(uint8_t channel) {
+    for(int i = 0; i < selectPins; i++) {
+        if ( selectPinArray[i] != -1 ) {
+            gpio_put(selectPinArray[i], (channel >> i) & 0x01);
+        }   
     }
 }
 
@@ -101,6 +152,9 @@ void AnalogInput::process() {
     for(int i = 0; i < ADC_COUNT; i++) {
         // Read X-Axis
         if (isValidPin(adc_pairs[i].x_pin)) {
+            if(adc_pairs[i].use_mux) {
+                selectChannel(adc_pairs[i].mux_channel_x);
+            }
             adc_pairs[i].x_value = readPin(i, adc_pairs[i].x_pin_adc, adc_pairs[i].x_center);
             if (adc_pairs[i].analog_invert == InvertMode::INVERT_X || 
                 adc_pairs[i].analog_invert == InvertMode::INVERT_XY) {
@@ -113,6 +167,9 @@ void AnalogInput::process() {
         }
         // Read Y-Axis
         if (isValidPin(adc_pairs[i].y_pin)) {
+            if(adc_pairs[i].use_mux) {
+                selectChannel(adc_pairs[i].mux_channel_y);
+            }
             adc_pairs[i].y_value = readPin(i, adc_pairs[i].y_pin_adc, adc_pairs[i].y_center);
             if (adc_pairs[i].analog_invert == InvertMode::INVERT_Y || 
                 adc_pairs[i].analog_invert == InvertMode::INVERT_XY) {
