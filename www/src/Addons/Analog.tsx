@@ -76,7 +76,6 @@ export const analogScheme = {
 		.number()
 		.label('Analog Stick 2 Invert')
 		.validateSelectionWhenValue('AnalogInputEnabled', INVERT_MODES),
-
 	forced_circularity: yup
 		.number()
 		.label('Force Circularity')
@@ -149,6 +148,51 @@ export const analogScheme = {
 		.number()
 		.label('Joystick Center Y2')
 		.validateRangeWhenValue('AnalogInputEnabled', 0, 4095),
+
+	analog_mux_channels: yup
+		.number()
+		.label('Analog Mux Channels')
+		.validateRangeWhenValue('AnalogInputEnabled', 0, 16),
+	analogSelectPin0: yup
+		.number()
+		.label('Analog Select Pin 0')
+		.validatePinWhenValue('AnalogInputEnabled'),
+	analogSelectPin1: yup
+		.number()
+		.label('Analog Select Pin 1')
+		.validatePinWhenValue('AnalogInputEnabled'),
+	analogSelectPin2: yup
+		.number()
+		.label('Analog Select Pin 2')
+		.validatePinWhenValue('AnalogInputEnabled'),
+	analogSelectPin3: yup
+		.number()
+		.label('Analog Select Pin 3')
+		.validatePinWhenValue('AnalogInputEnabled'),
+	analog_mux_1: yup
+		.number()
+		.label('Analog 1 Mux Enabled')
+		.validateRangeWhenValue('AnalogInputEnabled', 0, 1),
+	analog_channel_x_1: yup
+		.number()
+		.label('Analog 1 X Channel')
+		.validateRangeWhenValue('analog_mux_1', 0, 16),
+	analog_channel_y_1: yup
+		.number()
+		.label('Analog 1 Y Channel')
+		.validateRangeWhenValue('analog_mux_1', 0, 16),
+	analog_mux_2: yup
+		.number()
+		.label('Analog 2 Mux Enabled')
+		.validateRangeWhenValue('AnalogInputEnabled', 0, 1),
+	analog_channel_x_2: yup
+		.number()
+		.label('Analog 2 X Channel')
+		.validateRangeWhenValue('analog_mux_2', 0, 16),
+	analog_channel_y_2: yup
+		.number()
+		.label('Analog 2 Y Channel')
+		.validateRangeWhenValue('analog_mux_2', 0, 16),
 };
 
 export const analogState = {
@@ -181,18 +225,18 @@ export const analogState = {
 	analog_error2: 1,
 
 	analog_mux_channels: 8,
-	analogSelectPin0: 0,
-	analogSelectPin1: 0,
-	analogSelectPin2: 0,
-	analogSelectPin3: 0,
+	analogSelectPin0: -1,
+	analogSelectPin1: -1,
+	analogSelectPin2: -1,
+	analogSelectPin3: -1,
 
 	analog_mux_1: false,
-	analog_channel_x_1: 0,
-	analog_channel_y_1: 1,
+	analog_channel_x_1: -1,
+	analog_channel_y_1: -1,
 
 	analog_mux_2: false,
-	analog_channel_x_2: 3,
-	analog_channel_y_2: 4,
+	analog_channel_x_2: -1,
+	analog_channel_y_2: -1,
 
 };
 
@@ -331,6 +375,7 @@ const Analog = ({ values, errors, handleChange, handleCheckbox, setFieldValue }:
 								isInvalid={false}
 								checked={Boolean(values.analog_mux_1)}
 								onChange={(e) => {
+									console.log(e);
 									handleCheckbox('analog_mux_1');
 									handleChange(e);
 								}}
@@ -463,6 +508,7 @@ const Analog = ({ values, errors, handleChange, handleCheckbox, setFieldValue }:
 									isInvalid={false}
 									checked={Boolean(values.analog_smoothing)}
 									onChange={(e) => {
+										console.log(e);
 										handleCheckbox('analog_smoothing');
 										handleChange(e);
 									}}

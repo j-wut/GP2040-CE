@@ -2180,6 +2180,17 @@ std::string getAddonOptions()
     writeDoc(doc, "analog_error", analogOptions.analog_error);
     writeDoc(doc, "analog_error2", analogOptions.analog_error2);
     writeDoc(doc, "AnalogInputEnabled", analogOptions.enabled);
+    writeDoc(doc, "analog_mux_channels", analogOptions.analog_mux_channels);
+    writeDoc(doc, "analogSelectPin0", analogOptions.analogSelectPin0);
+    writeDoc(doc, "analogSelectPin1", analogOptions.analogSelectPin1);
+    writeDoc(doc, "analogSelectPin2", analogOptions.analogSelectPin2);
+    writeDoc(doc, "analogSelectPin3", analogOptions.analogSelectPin3);
+    writeDoc(doc, "analog_mux_1", analogOptions.analog_mux_1);
+    writeDoc(doc, "analog_channel_x_1", analogOptions.analog_channel_x_1);
+    writeDoc(doc, "analog_channel_y_1", analogOptions.analog_channel_y_1);
+    writeDoc(doc, "analog_mux_2", analogOptions.analog_mux_2);
+    writeDoc(doc, "analog_channel_x_2", analogOptions.analog_channel_x_2);
+    writeDoc(doc, "analog_channel_y_2", analogOptions.analog_channel_y_2);
 
     const BootselButtonOptions& bootselButtonOptions = Storage::getInstance().getAddonOptions().bootselButtonOptions;
     writeDoc(doc, "bootselButtonMap", bootselButtonOptions.buttonMap);
@@ -2622,7 +2633,7 @@ std:: string getJoystickCenter() {
         error_msg = "Analog input is not enabled";
     } else {
         
-        if (analogOptions.analog_mux_2) {
+        if (analogOptions.analog_mux_1) {
             switch(analogOptions.analog_mux_channels) {
                 case 4:
                     selectPins = 2;
@@ -2693,6 +2704,10 @@ std:: string getJoystickCenter() {
     } else {
         o["x"] = x;
         o["y"] = y;
+        o["mux"] = analogOptions.analog_mux_1;
+        o["channels"] = analogOptions.analog_mux_channels;
+        o["x_chan"] = analogOptions.analog_channel_x_1;
+        o["y_chan"] = analogOptions.analog_channel_y_1;
     }
     return serialize_json(doc);
 }
