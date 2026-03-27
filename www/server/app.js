@@ -593,6 +593,14 @@ app.get('/api/getAddonsOptions', (req, res) => {
 	});
 });
 
+
+app.post('/api/readJoystickPosition', (req, res) => {
+	return res.send({
+		x:2000,
+		y:2000,
+	})
+})
+
 app.get('/api/getExpansionPins', (req, res) => {
 	return res.send({
 		pins: {

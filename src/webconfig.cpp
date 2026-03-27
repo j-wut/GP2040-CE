@@ -1673,11 +1673,9 @@ std::string setReactiveLEDs()
     return serialize_json(doc);
 }
 
-std::string setAddonOptions()
+std::string setAnalogOptions()
 {
     DynamicJsonDocument doc = get_post_data();
-
-    GpioMappingInfo* gpioMappings = Storage::getInstance().getGpioMappings().pins;
 
     AnalogOptions& analogOptions = Storage::getInstance().getAddonOptions().analogOptions;
     docToPin(analogOptions.analogAdc1PinX, doc, "analogAdc1PinX");
@@ -1721,7 +1719,43 @@ std::string setAddonOptions()
     docToValue(analogOptions.analog_mux_2, doc, "analog_mux_2");
     docToValue(analogOptions.analog_channel_x_2, doc, "analog_channel_x_2");
     docToValue(analogOptions.analog_channel_y_2, doc, "analog_channel_y_2");
+}
 
+
+std::string setAddonOptions()
+{
+    DynamicJsonDocument doc = get_post_data();
+
+    GpioMappingInfo* gpioMappings = Storage::getInstance().getGpioMappings().pins;
+
+    AnalogOptions& analogOptions = Storage::getInstance().getAddonOptions().analogOptions;
+    docToPin(analogOptions.analogAdc1PinX, doc, "analogAdc1PinX");
+    docToPin(analogOptions.analogAdc1PinY, doc, "analogAdc1PinY");
+    docToValue(analogOptions.analogAdc1Mode, doc, "analogAdc1Mode");
+    docToValue(analogOptions.analogAdc1Invert, doc, "analogAdc1Invert");
+    docToPin(analogOptions.analogAdc2PinX, doc, "analogAdc2PinX");
+    docToPin(analogOptions.analogAdc2PinY, doc, "analogAdc2PinY");
+    docToValue(analogOptions.analogAdc2Mode, doc, "analogAdc2Mode");
+    docToValue(analogOptions.analogAdc2Invert, doc, "analogAdc2Invert");
+    docToValue(analogOptions.forced_circularity, doc, "forced_circularity");
+    docToValue(analogOptions.forced_circularity2, doc, "forced_circularity2");
+    docToValue(analogOptions.inner_deadzone, doc, "inner_deadzone");
+    docToValue(analogOptions.inner_deadzone2, doc, "inner_deadzone2");
+    docToValue(analogOptions.outer_deadzone, doc, "outer_deadzone");
+    docToValue(analogOptions.outer_deadzone2, doc, "outer_deadzone2");
+    docToValue(analogOptions.auto_calibrate, doc, "auto_calibrate");
+    docToValue(analogOptions.auto_calibrate2, doc, "auto_calibrate2");
+    docToValue(analogOptions.joystick_center_x, doc, "joystickCenterX");
+    docToValue(analogOptions.joystick_center_y, doc, "joystickCenterY");
+    docToValue(analogOptions.joystick_center_x2, doc, "joystickCenterX2");
+    docToValue(analogOptions.joystick_center_y2, doc, "joystickCenterY2");
+    docToValue(analogOptions.analog_smoothing, doc, "analog_smoothing");
+    docToValue(analogOptions.analog_smoothing2, doc, "analog_smoothing2");
+    docToValue(analogOptions.smoothing_factor, doc, "smoothing_factor");
+    docToValue(analogOptions.smoothing_factor2, doc, "smoothing_factor2");
+    docToValue(analogOptions.analog_error, doc, "analog_error");
+    docToValue(analogOptions.analog_error2, doc, "analog_error2");
+    docToValue(analogOptions.enabled, doc, "AnalogInputEnabled");
 
     BootselButtonOptions& bootselButtonOptions = Storage::getInstance().getAddonOptions().bootselButtonOptions;
     docToValue(bootselButtonOptions.buttonMap, doc, "bootselButtonMap");
@@ -2615,190 +2649,91 @@ std::string reboot() {
     return serialize_json(doc);
 }
 
-// NEW API: return current raw ADC reading for the configured analog pins
-std:: string getJoystickCenter() {
+std:: string getJoystickPosition() {
+    DynamicJsonDocument reqDoc = get_post_data();
+    /*
+    {
+        "channels": 1/4/8/16,
+        "selectPins": [0,1,2,3],
+        "xChannel": 0,
+        "xAdcPin": 29,
+        "yChannel": 2,
+        "yAdcPin": 29
+    }
+    */
     const size_t capacity = JSON_OBJECT_SIZE(10);
-    DynamicJsonDocument doc(capacity);
-    const AnalogOptions& analogOptions = Storage::getInstance().getAddonOptions().analogOptions;
+    DynamicJsonDocument res(capacity);
     
+
+    uint32_t channels = reqDoc["channels"];
+    uint32_t xChannel = reqDoc["xChannel"];
+    Pin_t xAdcPin = reqDoc["xAdcPin"];
+    uint32_t yChannel = reqDoc["yChannel"];
+    Pin_t yAdcPin = reqDoc["yAdcPin"];
+
     uint16_t x = 0, y = 0;
-    bool success = true;
-    std::string error_msg = "";
     int selectPins;
     Pin_t selectPinArray[4];
-    
-    // Check if analog input is enabled
-    if (!analogOptions.enabled) {
-        success = false;
-        error_msg = "Analog input is not enabled";
-    } else {
-        
-        if (analogOptions.analog_mux_1) {
-            switch(analogOptions.analog_mux_channels) {
-                case 4:
-                    selectPins = 2;
-                    break;
-                case 8:
-                    selectPins = 3;
-                    break;
-                case 16:
-                    selectPins = 4;
-                    break;
-                case 1:
-                default:
-                    selectPins = 0;
-                    break;
-            }
 
-            selectPinArray[0] = analogOptions.analogSelectPin0;
-            selectPinArray[1] = analogOptions.analogSelectPin1;
-            selectPinArray[2] = analogOptions.analogSelectPin2;
-            selectPinArray[3] = analogOptions.analogSelectPin3;
-            for(int i = 0; i < selectPins; i++) {
-                if ( selectPinArray[i] != -1 ) {
-                    gpio_init(selectPinArray[i]);
-                    gpio_set_dir(selectPinArray[i], GPIO_OUT);
-                    gpio_put(selectPinArray[i], 0);
-                }
-            }
-        }
-
-        // Initialize ADC if not already initialized
-        adc_init();
-        
-        // Check if specific stick is requested via query parameter
-        // For now, we'll read both sticks and return the appropriate one
-        // In a more sophisticated implementation, we could parse query parameters
-        
-        // Read first stick X/Y
-        if (isValidPin(analogOptions.analogAdc1PinX)) {
-            if(analogOptions.analog_mux_1) {
-                for(int i = 0; i < selectPins; i++) {
-                    if ( selectPinArray[i] != -1 ) {
-                        gpio_put(selectPinArray[i], (analogOptions.analog_channel_x_1 >> i) & 0x01);
-                    }   
-                }
-            }
-            adc_gpio_init(analogOptions.analogAdc1PinX);
-            adc_select_input(analogOptions.analogAdc1PinX - 26);
-            x = adc_read();
-        }
-        if (isValidPin(analogOptions.analogAdc1PinY)) {
-            if(analogOptions.analog_mux_1) {
-                for(int i = 0; i < selectPins; i++) {
-                    if ( selectPinArray[i] != -1 ) {
-                        gpio_put(selectPinArray[i], (analogOptions.analog_channel_y_1 >> i) & 0x01);
-                    }   
-                }
-            }
-            adc_gpio_init(analogOptions.analogAdc1PinY);
-            adc_select_input(analogOptions.analogAdc1PinY - 26);
-            y = adc_read();
-        }
+    switch(channels) {
+        case 4:
+            selectPins = 2;
+            break;
+        case 8:
+            selectPins = 3;
+            break;
+        case 16:
+            selectPins = 4;
+            break;
+        case 1:
+        default:
+            selectPins = 0;
+            break;
     }
     
-    JsonObject o = doc.to<JsonObject>();
-    o["success"] = success;
-    if (!success) {
-        o["error"] = error_msg;
-    } else {
-        o["x"] = x;
-        o["y"] = y;
-        o["mux"] = analogOptions.analog_mux_1;
-        o["channels"] = analogOptions.analog_mux_channels;
-        o["x_chan"] = analogOptions.analog_channel_x_1;
-        o["y_chan"] = analogOptions.analog_channel_y_1;
+    for (int i=0; i < selectPins; i++) {
+        selectPinArray[i] = reqDoc["selectPins"][i];
     }
-    return serialize_json(doc);
-}
 
-// NEW API: return current raw ADC reading for stick 2
-std:: string getJoystickCenter2() {
-    const size_t capacity = JSON_OBJECT_SIZE(10);
-    DynamicJsonDocument doc(capacity);
-    const AnalogOptions& analogOptions = Storage::getInstance().getAddonOptions().analogOptions;
-    
-    uint16_t x = 0, y = 0;
-    bool success = true;
-    std::string error_msg = "";
-    int selectPins;
-    Pin_t selectPinArray[4];
-    
-    // Check if analog input is enabled
-    if (!analogOptions.enabled) {
-        success = false;
-        error_msg = "Analog input is not enabled";
-    } else {
-
-        if (analogOptions.analog_mux_2) {
-            switch(analogOptions.analog_mux_channels) {
-                case 4:
-                    selectPins = 2;
-                    break;
-                case 8:
-                    selectPins = 3;
-                    break;
-                case 16:
-                    selectPins = 4;
-                    break;
-                case 1:
-                default:
-                    selectPins = 0;
-                    break;
-            }
-
-            selectPinArray[0] = analogOptions.analogSelectPin0;
-            selectPinArray[1] = analogOptions.analogSelectPin1;
-            selectPinArray[2] = analogOptions.analogSelectPin2;
-            selectPinArray[3] = analogOptions.analogSelectPin3;
-            for(int i = 0; i < selectPins; i++) {
-                if ( selectPinArray[i] != -1 ) {
-                    gpio_init(selectPinArray[i]);
-                    gpio_set_dir(selectPinArray[i], GPIO_OUT);
-                    gpio_put(selectPinArray[i], 0);
-                }
-            }
-        }
-
-        // Initialize ADC if not already initialized
-        adc_init();
-        
-        // Read second stick X/Y
-        if (isValidPin(analogOptions.analogAdc2PinX)) {
-            if(analogOptions.analog_mux_2) {
-                for(int i = 0; i < selectPins; i++) {
-                    if ( selectPinArray[i] != -1 ) {
-                        gpio_put(selectPinArray[i], (analogOptions.analog_channel_x_2 >> i) & 0x01);
-                    }   
-                }
-            }
-            adc_gpio_init(analogOptions.analogAdc2PinX);
-            adc_select_input(analogOptions.analogAdc2PinX - 26);
-            x = adc_read();
-        }
-        if (isValidPin(analogOptions.analogAdc2PinY)) {
-            if(analogOptions.analog_mux_2) {
-                for(int i = 0; i < selectPins; i++) {
-                    if ( selectPinArray[i] != -1 ) {
-                        gpio_put(selectPinArray[i], (analogOptions.analog_channel_y_2 >> i) & 0x01);
-                    }   
-                }
-            }
-            adc_gpio_init(analogOptions.analogAdc2PinY);
-            adc_select_input(analogOptions.analogAdc2PinY - 26);
-            y = adc_read();
+    for(int i = 0; i < selectPins; i++) {
+        if ( selectPinArray[i] != -1 ) {
+            gpio_init(selectPinArray[i]);
+            gpio_set_dir(selectPinArray[i], GPIO_OUT);
+            gpio_put(selectPinArray[i], 0);
         }
     }
+
+    // Initialize ADC if not already initialized
+    adc_init();
     
-    JsonObject o = doc.to<JsonObject>();
-    o["success"] = success;
-    if (!success) {
-        o["error"] = error_msg;
-    } else {
+    // Read X/Y
+    if (isValidPin(xAdcPin)) {
+        for(int i = 0; i < selectPins; i++) {
+            if (selectPinArray[i] != -1) {
+                gpio_put(selectPinArray[i], (xChannel >> i) & 0x01);
+            }
+        }
+        adc_gpio_init(xAdcPin);
+        adc_select_input(xAdcPin - 26);
+        x = adc_read();
+    }
+    if (isValidPin(yAdcPin)) {
+        for(int i = 0; i < selectPins; i++) {
+            if ( selectPinArray[i] != -1 ) {
+                gpio_put(selectPinArray[i], (yChannel >> i) & 0x01);
+            }   
+        }
+        adc_gpio_init(yAdcPin);
+        adc_select_input(yAdcPin - 26);
+        y = adc_read();
+    }
+    
+    JsonObject o = res.to<JsonObject>();
+    {
         o["x"] = x;
         o["y"] = y;
     }
-    return serialize_json(doc);
+    return serialize_json(res);
 }
 
 typedef std::string (*HandlerFuncPtr)();
@@ -2849,8 +2784,8 @@ static const std::pair<const char*, HandlerFuncPtr> handlerFuncs[] =
     { "/api/abortGetHeldPins", abortGetHeldPins },
     { "/api/getUsedPins", getUsedPins },
     { "/api/getConfig", getConfig },
-    { "/api/getJoystickCenter", getJoystickCenter },
-    { "/api/getJoystickCenter2", getJoystickCenter2 },
+    { "/api/getJoystickPosition", getJoystickPosition },
+    { "/api/setAnalogOptions", setAnalogOptions },
 #if !defined(NDEBUG)
     { "/api/echo", echo },
 #endif

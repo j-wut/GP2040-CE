@@ -1,3 +1,4 @@
+import { GetJoystickPositionRequest, GetJoystickPositionResponse } from 'src/Data/Types';
 import Http from './Http';
 import { hexToInt, rgbIntToHex } from './Utilities';
 
@@ -691,6 +692,14 @@ async function abortGetHeldPins() {
 	}
 }
 
+// POST function to ADC reading for joystick
+async function getJoystickPosition(request: GetJoystickPositionRequest): Promise<GetJoystickPositionResponse> {
+	return Http.post(`${baseUrl}/api/getJoystickPosition`, request)
+		.then(res => res.data)
+		.catch(console.error);
+}
+
+
 async function reboot(bootMode) {
 	return Http.post(`${baseUrl}/api/reboot`, { bootMode })
 		.then((response) => response.data)
@@ -743,5 +752,6 @@ export default {
 	getUsedPins,
 	getHeldPins,
 	abortGetHeldPins,
+	getJoystickPosition,
 	reboot,
 };

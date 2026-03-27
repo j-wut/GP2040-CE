@@ -10,17 +10,19 @@ import AnalogPinOptions from '../Components/AnalogPinOptions';
 import { AppContext } from '../Contexts/AppContext';
 import FormControl from '../Components/FormControl';
 import { AddonPropTypes } from '../Pages/AddonsConfigPage';
+import { AnalogInvertMode, AnalogMode, AnalogOptions, GetJoystickPositionRequest } from '../Data/Types';
+import WebApi from '../Services/WebApi';
 
 const ANALOG_STICK_MODES = [
-	{ label: 'Left Analog', value: 1 },
-	{ label: 'Right Analog', value: 2 },
+	{ label: 'Left Analog', value: AnalogMode.LEFT_ANALOG },
+	{ label: 'Right Analog', value: AnalogMode.RIGHT_ANALOG },
 ];
 
 const INVERT_MODES = [
-	{ label: 'None', value: 0 },
-	{ label: 'X Axis', value: 1 },
-	{ label: 'Y Axis', value: 2 },
-	{ label: 'X/Y Axis', value: 3 },
+	{ label: 'None', value: AnalogInvertMode.NONE},
+	{ label: 'X Axis', value: AnalogInvertMode.X_AXIS },
+	{ label: 'Y Axis', value: AnalogInvertMode.Y_AXIS },
+	{ label: 'X/Y Axis', value: AnalogInvertMode.XY_AXIS },
 ];
 
 const ANALOG_ERROR_RATES = [
@@ -195,8 +197,8 @@ export const analogScheme = {
 		.validateRangeWhenValue('analog_mux_2', 0, 16),
 };
 
-export const analogState = {
-	AnalogInputEnabled: 0,
+export const analogState: AnalogOptions = {
+	AnalogInputEnabled: false,
 	analogAdc1PinX: -1,
 	analogAdc1PinY: -1,
 	analogAdc1Mode: 1,
@@ -205,20 +207,20 @@ export const analogState = {
 	analogAdc2PinY: -1,
 	analogAdc2Mode: 2,
 	analogAdc2Invert: 0,
-	forced_circularity: 0,
-	forced_circularity2: 0,
+	forced_circularity: false,
+	forced_circularity2: false,
 	inner_deadzone: 5,
 	inner_deadzone2: 5,
 	outer_deadzone: 95,
 	outer_deadzone2: 95,
-	auto_calibrate: 0,
-	auto_calibrate2: 0,
+	auto_calibrate: false,
+	auto_calibrate2: false,
 	joystickCenterX: 0,
 	joystickCenterY: 0,
 	joystickCenterX2: 0,
 	joystickCenterY2: 0,
-	analog_smoothing: 0,
-	analog_smoothing2: 0,
+	analog_smoothing: false,
+	analog_smoothing2: false,
 	smoothing_factor: 5,
 	smoothing_factor2: 5,
 	analog_error: 1,
@@ -240,9 +242,61 @@ export const analogState = {
 
 };
 
+
 const Analog = ({ values, errors, handleChange, handleCheckbox, setFieldValue }: AddonPropTypes) => {
 	const { usedPins } = useContext(AppContext);
 	const { t } = useTranslation();
+	
+	const getCalibrationValues = async (params: GetJoystickPositionRequest): Promise <{
+		step: number;
+		direction: string;
+		x: number;
+		y: number;
+	}[] | void> => {
+		const steps = [
+			{ direction: t('AddonsConfig:analog-calibration-direction-top-left'), position: 'top-left' },
+			{ direction: t('AddonsConfig:analog-calibration-direction-top-right'), position: 'top-right' },
+			{ direction: t('AddonsConfig:analog-calibration-direction-bottom-left'), position: 'bottom-left' },
+			{ direction: t('AddonsConfig:analog-calibration-direction-bottom-right'), position: 'bottom-right' }
+		];
+		let calibrationValues = []
+		
+		for (let i = 0; i < steps.length; i++) {
+			const step = steps[i];
+			const stepNumber = i + 1;
+			
+			
+			// Show confirmation dialog
+			const userConfirmed = confirm(
+				t('AddonsConfig:analog-calibration-step-title', { step: stepNumber }) + '\n\n' +
+				t('AddonsConfig:analog-calibration-step-instruction', { stick: '1', direction: step.direction }) + '\n\n' +
+				t('AddonsConfig:analog-calibration-step-confirm', { stick: '1', step: stepNumber })
+			);
+			
+			if (!userConfirmed) {
+				alert(t('AddonsConfig:analog-calibration-cancelled'));
+				return;
+			}
+			
+			
+			// Read current center value
+			console.log(`Fetching joystick 1 center for step ${stepNumber}...`);
+			const data = await WebApi.getJoystickPosition(params);
+
+			console.log('Response data:', data);
+			
+			calibrationValues.push({
+				step: stepNumber,
+				direction: step.direction,
+				x: data.x || 0,
+				y: data.y || 0
+			});
+			
+			console.log(`Step ${stepNumber} completed:`, calibrationValues[i]);
+		}
+
+		return calibrationValues;
+	}
 	
 	const CHANNELS_OPTIONS = {
 		1: t('HETrigger:direct-no-mux'),
@@ -577,60 +631,16 @@ const Analog = ({ values, errors, handleChange, handleCheckbox, setFieldValue }:
 									onClick={async () => {
 										try {
 											// Multi-step calibration process
-											const steps = [
-												{ direction: t('AddonsConfig:analog-calibration-direction-top-left'), position: 'top-left' },
-												{ direction: t('AddonsConfig:analog-calibration-direction-top-right'), position: 'top-right' },
-												{ direction: t('AddonsConfig:analog-calibration-direction-bottom-left'), position: 'bottom-left' },
-												{ direction: t('AddonsConfig:analog-calibration-direction-bottom-right'), position: 'bottom-right' }
-											];
-											
-											const calibrationValues = [];
-											
-											for (let i = 0; i < steps.length; i++) {
-												const step = steps[i];
-												const stepNumber = i + 1;
-												
-												
-												// Show confirmation dialog
-												const userConfirmed = confirm(
-													t('AddonsConfig:analog-calibration-step-title', { step: stepNumber }) + '\n\n' +
-													t('AddonsConfig:analog-calibration-step-instruction', { stick: '1', direction: step.direction }) + '\n\n' +
-													t('AddonsConfig:analog-calibration-step-confirm', { stick: '1', step: stepNumber })
-												);
-												
-												if (!userConfirmed) {
-													alert(t('AddonsConfig:analog-calibration-cancelled'));
-													return;
-												}
-												
-												
-												// Read current center value
-												console.log(`Fetching joystick 1 center for step ${stepNumber}...`);
-												const res = await fetch('/api/getJoystickCenter');
-												console.log('Response status:', res.status);
-												
-												if (!res.ok) {
-													throw new Error(`HTTP error! status: ${res.status}`);
-												}
-												
-												const data = await res.json();
-												console.log('Response data:', data);
-												
-												if (!data.success || data.error) {
-													alert(t('AddonsConfig:analog-calibration-failed', { error: data.error || 'Unknown error' }));
-													console.error('API Error:', data.error);
-													return;
-												}
-												
-												calibrationValues.push({
-													step: stepNumber,
-													direction: step.direction,
-													x: data.x || 0,
-													y: data.y || 0
+											const calibrationValues = await getCalibrationValues({
+													channels: values.analog_mux_channels,
+													selectPins: [values.analogSelectPin0, values.analogSelectPin1, values.analogSelectPin2, values.analogSelectPin3],
+													xChannel: values.analog_channel_x_1,
+													xAdcPin: values.analogAdc1PinX,
+													yChannel: values.analog_channel_y_1,
+													yAdcPin: values.analogAdc1PinY
 												});
-												
-												console.log(`Step ${stepNumber} completed:`, calibrationValues[i]);
-											}
+											
+											if (!calibrationValues) return;
 											
 
 											// Calculate center value from four points
@@ -903,62 +913,16 @@ const Analog = ({ values, errors, handleChange, handleCheckbox, setFieldValue }:
 									disabled={Boolean(values.auto_calibrate2)}
 									onClick={async () => {
 										try {
-											// Multi-step calibration process
-											const steps = [
-												{ direction: t('AddonsConfig:analog-calibration-direction-top-left'), position: 'top-left' },
-												{ direction: t('AddonsConfig:analog-calibration-direction-top-right'), position: 'top-right' },
-												{ direction: t('AddonsConfig:analog-calibration-direction-bottom-left'), position: 'bottom-left' },
-												{ direction: t('AddonsConfig:analog-calibration-direction-bottom-right'), position: 'bottom-right' }
-											];
-											
-											const calibrationValues = [];
-											
-											for (let i = 0; i < steps.length; i++) {
-												const step = steps[i];
-												const stepNumber = i + 1;
-												
-												
-												// Show confirmation dialog
-												const userConfirmed = confirm(
-													t('AddonsConfig:analog-calibration-step-title', { step: stepNumber }) + '\n\n' +
-													t('AddonsConfig:analog-calibration-step-instruction', { stick: '2', direction: step.direction }) + '\n\n' +
-													t('AddonsConfig:analog-calibration-step-confirm', { stick: '2', step: stepNumber })
-												);
-												
-												if (!userConfirmed) {
-													alert(t('AddonsConfig:analog-calibration-cancelled'));
-													return;
-												}
-												
-												
-												// Read current center value
-												console.log(`Fetching joystick 2 center for step ${stepNumber}...`);
-												const res = await fetch('/api/getJoystickCenter2');
-												console.log('Response status:', res.status);
-												
-												if (!res.ok) {
-													throw new Error(`HTTP error! status: ${res.status}`);
-												}
-												
-												const data = await res.json();
-												console.log('Response data:', data);
-												
-												if (!data.success || data.error) {
-													alert(t('AddonsConfig:analog-calibration-failed', { error: data.error || 'Unknown error' }));
-													console.error('API Error:', data.error);
-													return;
-												}
-												
-												calibrationValues.push({
-													step: stepNumber,
-													direction: step.direction,
-													x: data.x || 0,
-													y: data.y || 0
+											const calibrationValues = await getCalibrationValues({
+													channels: values.analog_mux_channels,
+													selectPins: [values.analogSelectPin0, values.analogSelectPin1, values.analogSelectPin2, values.analogSelectPin3],
+													xChannel: values.analog_channel_x_2,
+													xAdcPin: values.analogAdc2PinX,
+													yChannel: values.analog_channel_y_2,
+													yAdcPin: values.analogAdc2PinY
 												});
-												
-												console.log(`Step ${stepNumber} completed:`, calibrationValues[i]);
-											}
 											
+											if (!calibrationValues) return;
 
 											// Calculate center value from four points
 											const avgX = Math.round(calibrationValues.reduce((sum, val) => sum + val.x, 0) / 4);
