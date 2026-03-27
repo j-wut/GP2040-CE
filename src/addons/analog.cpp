@@ -39,6 +39,13 @@ void AnalogInput::setup() {
     adc_pairs[0].mux_channel_x = analogOptions.analog_channel_x_1;
     adc_pairs[0].mux_channel_y = analogOptions.analog_channel_y_1;
 
+    adc_pairs[0].linearity = analogOptions.analog_linearity_1;
+    adc_pairs[0].linearityMargin = analogOptions.analog_linearity_margin_1;
+    adc_pairs[0].angle_snapping = analogOptions.analog_angle_snapping_1;
+    adc_pairs[0].snap_direction_count = analogOptions.analog_direction_count_1;
+    adc_pairs[0].snap_directions = analogOptions.analog_directions_1;
+
+
     adc_pairs[1].x_pin = analogOptions.analogAdc2PinX;
     adc_pairs[1].y_pin = analogOptions.analogAdc2PinY;
     adc_pairs[1].analog_invert = analogOptions.analogAdc2Invert;
@@ -55,7 +62,12 @@ void AnalogInput::setup() {
     adc_pairs[1].use_mux = analogOptions.analog_mux_2;
     adc_pairs[1].mux_channel_x = analogOptions.analog_channel_x_2;
     adc_pairs[1].mux_channel_y = analogOptions.analog_channel_y_2;
-    
+
+    adc_pairs[1].linearity = analogOptions.analog_linearity_2;
+    adc_pairs[1].linearityMargin = analogOptions.analog_linearity_margin_2;
+    adc_pairs[1].angle_snapping = analogOptions.analog_angle_snapping_2;
+    adc_pairs[1].snap_direction_count = analogOptions.analog_direction_count_2;
+    adc_pairs[1].snap_directions = analogOptions.analog_directions_2;
 
     // Setup defaults and helpers
     for (int i = 0; i < ADC_COUNT; i++) {
@@ -68,6 +80,8 @@ void AnalogInput::setup() {
         adc_pairs[i].y_magnitude = 0.0f;
         adc_pairs[i].x_ema = 0.0f;
         adc_pairs[i].y_ema = 0.0f;
+        adc_pairs[i].xy_radians = 0.0f;
+        adc_pairs[i].prev_xy_radians = 0.0f;
     }
 
     if (adc_pairs[0].use_mux || adc_pairs[1].use_mux) {
@@ -182,6 +196,23 @@ void AnalogInput::process() {
         }
         // Look for dead-zones and circularity
         adc_pairs[i].xy_magnitude = magnitudeCalculation(i, adc_pairs[i]);
+        setRadianDirection(adc_pairs[i]);
+
+        if (adc_pairs[i].linearity) {
+            if (std::abs(adc_pairs[i].xy_radians - adc_pairs[i].xy_radians) > adc_pairs[i].linearityMargin) {
+                adc_pairs[i].prev_xy_radians = adc_pairs[i].xy_radians;
+            } else {
+                adc_pairs[i].xy_radians = adc_pairs[i].prev_xy_radians;
+            }
+        }
+
+        if (adc_pairs[i].angle_snapping) {
+            snapToDirection(adc_pairs[i]);
+        }
+
+        adc_pairs[i].x_value = std::cos(adc_pairs[i].xy_radians) * adc_pairs[i].xy_magnitude;
+        adc_pairs[i].y_value = std::sin(adc_pairs[i].xy_radians) * adc_pairs[i].xy_magnitude;
+
         if (adc_pairs[i].xy_magnitude < adc_pairs[i].in_deadzone) {
             adc_pairs[i].x_value = ANALOG_CENTER;
             adc_pairs[i].y_value = ANALOG_CENTER;
@@ -232,6 +263,19 @@ float AnalogInput::magnitudeCalculation(int stick_num, adc_instance & adc_inst) 
     adc_inst.x_magnitude = adc_inst.x_value - ANALOG_CENTER;
     adc_inst.y_magnitude = adc_inst.y_value - ANALOG_CENTER;
     return adc_pairs[stick_num].error_rate * std::sqrt((adc_inst.x_magnitude * adc_inst.x_magnitude) + (adc_inst.y_magnitude * adc_inst.y_magnitude));
+}
+
+void AnalogInput::setRadianDirection(adc_instance & adc_inst) {
+    adc_inst.xy_radians = std::atan2(adc_inst.y_magnitude, adc_inst.x_magnitude);
+}
+
+void AnalogInput::snapToDirection(adc_instance & adc_inst) {
+    for (int i=0; i< adc_inst.snap_direction_count; i++) {
+        if (std::abs(adc_inst.xy_radians - adc_inst.snap_directions[i].angle) < adc_inst.snap_directions[i].snap_margin) {
+            adc_inst.xy_radians = adc_inst.snap_directions[i].angle * ( M_PI / 180.0);
+            return;
+        }
+    }
 }
 
 void AnalogInput::radialDeadzone(int stick_num, adc_instance & adc_inst) {
