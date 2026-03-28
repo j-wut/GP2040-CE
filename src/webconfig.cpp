@@ -2773,6 +2773,9 @@ std::string setAnalogOptions()
     }
     analogOptions.analog_direction_count_2 = direction_count;
 
+    EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
+
+    return serialize_json(doc);
 }
 
 std::string getAnalogOptions()
@@ -2826,6 +2829,7 @@ std::string getAnalogOptions()
     writeDoc(doc, "analog_linearity_margin_2", analogOptions.analog_linearity_margin_2);
     
     writeDoc(doc, "analog_angle_snapping_1", analogOptions.analog_angle_snapping_1);
+    writeDoc(doc, "analog_direction_count_1", analogOptions.analog_direction_count_1);
 
     JsonArray analog_snap_directions_1 = doc.createNestedArray("analog_directions_1");
     for (int i = 0; i < analogOptions.analog_direction_count_1; i++) {
@@ -2837,7 +2841,8 @@ std::string getAnalogOptions()
         direction["release"] = analogOptions.analog_directions_1[i].release;
     }
 
-    writeDoc(doc, "analog_angle_snapping_2", analogOptions.analog_angle_snapping_2);    
+    writeDoc(doc, "analog_angle_snapping_2", analogOptions.analog_angle_snapping_2);
+    writeDoc(doc, "analog_direction_count_2", analogOptions.analog_direction_count_2);
 
     JsonArray analog_snap_directions_2 = doc.createNestedArray("analog_directions_2");
     for (int i = 0; i < analogOptions.analog_direction_count_2; i++) {

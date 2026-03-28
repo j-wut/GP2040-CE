@@ -199,19 +199,15 @@ void AnalogInput::process() {
         setRadianDirection(adc_pairs[i]);
 
         if (adc_pairs[i].linearity) {
-            if (std::abs(adc_pairs[i].xy_radians - adc_pairs[i].xy_radians) > adc_pairs[i].linearityMargin) {
-                adc_pairs[i].prev_xy_radians = adc_pairs[i].xy_radians;
-            } else {
-                adc_pairs[i].xy_radians = adc_pairs[i].prev_xy_radians;
-            }
+            correctLinearity(adc_pairs[i]);
         }
 
         if (adc_pairs[i].angle_snapping) {
             snapToDirection(adc_pairs[i]);
         }
 
-        adc_pairs[i].x_value = std::cos(adc_pairs[i].xy_radians) * adc_pairs[i].xy_magnitude;
-        adc_pairs[i].y_value = std::sin(adc_pairs[i].xy_radians) * adc_pairs[i].xy_magnitude;
+        adc_pairs[i].x_magnitude = std::cos(adc_pairs[i].xy_radians) * adc_pairs[i].xy_magnitude;
+        adc_pairs[i].y_magnitude = std::sin(adc_pairs[i].xy_radians) * adc_pairs[i].xy_magnitude;
 
         if (adc_pairs[i].xy_magnitude < adc_pairs[i].in_deadzone) {
             adc_pairs[i].x_value = ANALOG_CENTER;
@@ -266,13 +262,40 @@ float AnalogInput::magnitudeCalculation(int stick_num, adc_instance & adc_inst) 
 }
 
 void AnalogInput::setRadianDirection(adc_instance & adc_inst) {
-    adc_inst.xy_radians = std::atan2(adc_inst.y_magnitude, adc_inst.x_magnitude);
+    // should be range from 0 - 2pi
+    float angle = std::atan2(adc_inst.y_magnitude, adc_inst.x_magnitude);
+    if (angle < 0) {
+        angle = angle + 2.0 * M_PI;
+    }
+    adc_inst.xy_radians = angle;
+}
+
+void AnalogInput::correctLinearity(adc_instance & adc_inst) {
+    float diff = adc_inst.xy_radians - adc_inst.prev_xy_radians;
+    while (diff < - M_PI){
+        diff = diff + 2.0 * M_PI;
+    }
+    while (diff > M_PI) {
+        diff = diff - 2.0 * M_PI;
+    }
+    if (std::abs(diff) > adc_inst.linearityMargin) {
+        adc_inst.prev_xy_radians = adc_inst.xy_radians;
+    } else {
+        adc_inst.xy_radians = adc_inst.prev_xy_radians;
+    }
 }
 
 void AnalogInput::snapToDirection(adc_instance & adc_inst) {
     for (int i=0; i< adc_inst.snap_direction_count; i++) {
-        if (std::abs(adc_inst.xy_radians - adc_inst.snap_directions[i].angle) < adc_inst.snap_directions[i].snap_margin) {
-            adc_inst.xy_radians = adc_inst.snap_directions[i].angle * ( M_PI / 180.0);
+        float diff = adc_inst.xy_radians - adc_inst.snap_directions[i].angle;
+        while (diff < - M_PI){
+            diff = diff + 2.0 * M_PI;
+        }
+        while (diff > M_PI) {
+            diff = diff - 2.0 * M_PI;
+        }
+        if (std::abs(diff) < adc_inst.snap_directions[i].snap_margin) {
+            adc_inst.xy_radians = adc_inst.snap_directions[i].angle;
             return;
         }
     }
