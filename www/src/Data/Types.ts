@@ -1,3 +1,4 @@
+import { number } from "yup";
 
 export interface GetJoystickPositionRequest {
     channels: number;
@@ -22,6 +23,13 @@ export enum AnalogInvertMode {
     X_AXIS,
     Y_AXIS,
     XY_AXIS,
+}
+
+export interface AnalogSnapDirection {
+    angle: number;
+    snap_margin: number;
+    activation: number;
+    release: number;
 }
 
 export interface AnalogOptions {
@@ -62,9 +70,18 @@ export interface AnalogOptions {
 	analog_mux_1: boolean;
 	analog_channel_x_1: number;
 	analog_channel_y_1: number;
-
 	analog_mux_2: boolean;
 	analog_channel_x_2: number;
 	analog_channel_y_2: number;
 
+    analog_linearity_1: boolean;
+    analog_linearity_margin_1: number;
+    analog_linearity_2: boolean;
+    analog_linearity_margin_2: number;
+
+    analog_angle_snapping_1: boolean;
+    analog_directions_1: AnalogSnapDirection;
+    
+    analog_angle_snapping_2: boolean;
+    analog_directions_2: AnalogSnapDirection;
 }

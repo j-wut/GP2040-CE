@@ -35,6 +35,7 @@
 #include "lwip/def.h"
 #include "lwip/mem.h"
 #include "addons/input_macro.h"
+#include "addons/analog.h"
 
 #define PATH_CGI_ACTION "/cgi/action"
 
@@ -1673,55 +1674,6 @@ std::string setReactiveLEDs()
     return serialize_json(doc);
 }
 
-std::string setAnalogOptions()
-{
-    DynamicJsonDocument doc = get_post_data();
-
-    AnalogOptions& analogOptions = Storage::getInstance().getAddonOptions().analogOptions;
-    docToPin(analogOptions.analogAdc1PinX, doc, "analogAdc1PinX");
-    docToPin(analogOptions.analogAdc1PinY, doc, "analogAdc1PinY");
-    docToValue(analogOptions.analogAdc1Mode, doc, "analogAdc1Mode");
-    docToValue(analogOptions.analogAdc1Invert, doc, "analogAdc1Invert");
-    docToPin(analogOptions.analogAdc2PinX, doc, "analogAdc2PinX");
-    docToPin(analogOptions.analogAdc2PinY, doc, "analogAdc2PinY");
-    docToValue(analogOptions.analogAdc2Mode, doc, "analogAdc2Mode");
-    docToValue(analogOptions.analogAdc2Invert, doc, "analogAdc2Invert");
-    docToValue(analogOptions.forced_circularity, doc, "forced_circularity");
-    docToValue(analogOptions.forced_circularity2, doc, "forced_circularity2");
-    docToValue(analogOptions.inner_deadzone, doc, "inner_deadzone");
-    docToValue(analogOptions.inner_deadzone2, doc, "inner_deadzone2");
-    docToValue(analogOptions.outer_deadzone, doc, "outer_deadzone");
-    docToValue(analogOptions.outer_deadzone2, doc, "outer_deadzone2");
-    docToValue(analogOptions.auto_calibrate, doc, "auto_calibrate");
-    docToValue(analogOptions.auto_calibrate2, doc, "auto_calibrate2");
-    docToValue(analogOptions.joystick_center_x, doc, "joystickCenterX");
-    docToValue(analogOptions.joystick_center_y, doc, "joystickCenterY");
-    docToValue(analogOptions.joystick_center_x2, doc, "joystickCenterX2");
-    docToValue(analogOptions.joystick_center_y2, doc, "joystickCenterY2");
-    docToValue(analogOptions.analog_smoothing, doc, "analog_smoothing");
-    docToValue(analogOptions.analog_smoothing2, doc, "analog_smoothing2");
-    docToValue(analogOptions.smoothing_factor, doc, "smoothing_factor");
-    docToValue(analogOptions.smoothing_factor2, doc, "smoothing_factor2");
-    docToValue(analogOptions.analog_error, doc, "analog_error");
-    docToValue(analogOptions.analog_error2, doc, "analog_error2");
-    docToValue(analogOptions.enabled, doc, "AnalogInputEnabled");
-
-    docToValue(analogOptions.analog_mux_channels, doc, "analog_mux_channels");
-    docToPin(analogOptions.analogSelectPin0, doc, "analogSelectPin0");
-    docToPin(analogOptions.analogSelectPin1, doc, "analogSelectPin1");
-    docToPin(analogOptions.analogSelectPin2, doc, "analogSelectPin2");
-    docToPin(analogOptions.analogSelectPin3, doc, "analogSelectPin3");
-
-    docToValue(analogOptions.analog_mux_1, doc, "analog_mux_1");
-    docToValue(analogOptions.analog_channel_x_1, doc, "analog_channel_x_1");
-    docToValue(analogOptions.analog_channel_y_1, doc, "analog_channel_y_1");
-    
-    docToValue(analogOptions.analog_mux_2, doc, "analog_mux_2");
-    docToValue(analogOptions.analog_channel_x_2, doc, "analog_channel_x_2");
-    docToValue(analogOptions.analog_channel_y_2, doc, "analog_channel_y_2");
-}
-
-
 std::string setAddonOptions()
 {
     DynamicJsonDocument doc = get_post_data();
@@ -2736,6 +2688,170 @@ std:: string getJoystickPosition() {
     return serialize_json(res);
 }
 
+std::string setAnalogOptions()
+{
+    DynamicJsonDocument doc = get_post_data();
+
+    AnalogOptions& analogOptions = Storage::getInstance().getAddonOptions().analogOptions;
+    docToPin(analogOptions.analogAdc1PinX, doc, "analogAdc1PinX");
+    docToPin(analogOptions.analogAdc1PinY, doc, "analogAdc1PinY");
+    docToValue(analogOptions.analogAdc1Mode, doc, "analogAdc1Mode");
+    docToValue(analogOptions.analogAdc1Invert, doc, "analogAdc1Invert");
+    docToPin(analogOptions.analogAdc2PinX, doc, "analogAdc2PinX");
+    docToPin(analogOptions.analogAdc2PinY, doc, "analogAdc2PinY");
+    docToValue(analogOptions.analogAdc2Mode, doc, "analogAdc2Mode");
+    docToValue(analogOptions.analogAdc2Invert, doc, "analogAdc2Invert");
+    docToValue(analogOptions.forced_circularity, doc, "forced_circularity");
+    docToValue(analogOptions.forced_circularity2, doc, "forced_circularity2");
+    docToValue(analogOptions.inner_deadzone, doc, "inner_deadzone");
+    docToValue(analogOptions.inner_deadzone2, doc, "inner_deadzone2");
+    docToValue(analogOptions.outer_deadzone, doc, "outer_deadzone");
+    docToValue(analogOptions.outer_deadzone2, doc, "outer_deadzone2");
+    docToValue(analogOptions.auto_calibrate, doc, "auto_calibrate");
+    docToValue(analogOptions.auto_calibrate2, doc, "auto_calibrate2");
+    docToValue(analogOptions.joystick_center_x, doc, "joystickCenterX");
+    docToValue(analogOptions.joystick_center_y, doc, "joystickCenterY");
+    docToValue(analogOptions.joystick_center_x2, doc, "joystickCenterX2");
+    docToValue(analogOptions.joystick_center_y2, doc, "joystickCenterY2");
+    docToValue(analogOptions.analog_smoothing, doc, "analog_smoothing");
+    docToValue(analogOptions.analog_smoothing2, doc, "analog_smoothing2");
+    docToValue(analogOptions.smoothing_factor, doc, "smoothing_factor");
+    docToValue(analogOptions.smoothing_factor2, doc, "smoothing_factor2");
+    docToValue(analogOptions.analog_error, doc, "analog_error");
+    docToValue(analogOptions.analog_error2, doc, "analog_error2");
+    docToValue(analogOptions.enabled, doc, "AnalogInputEnabled");
+
+    docToValue(analogOptions.analog_mux_channels, doc, "analog_mux_channels");
+    docToPin(analogOptions.analogSelectPin0, doc, "analogSelectPin0");
+    docToPin(analogOptions.analogSelectPin1, doc, "analogSelectPin1");
+    docToPin(analogOptions.analogSelectPin2, doc, "analogSelectPin2");
+    docToPin(analogOptions.analogSelectPin3, doc, "analogSelectPin3");
+
+    docToValue(analogOptions.analog_mux_1, doc, "analog_mux_1");
+    docToValue(analogOptions.analog_channel_x_1, doc, "analog_channel_x_1");
+    docToValue(analogOptions.analog_channel_y_1, doc, "analog_channel_y_1");
+    
+    docToValue(analogOptions.analog_mux_2, doc, "analog_mux_2");
+    docToValue(analogOptions.analog_channel_x_2, doc, "analog_channel_x_2");
+    docToValue(analogOptions.analog_channel_y_2, doc, "analog_channel_y_2");
+
+    
+    docToValue(analogOptions.analog_linearity_1, doc, "analog_linearity_1");
+    docToValue(analogOptions.analog_linearity_margin_1, doc, "analog_linearity_margin_1");
+    docToValue(analogOptions.analog_linearity_2, doc, "analog_linearity_2");
+    docToValue(analogOptions.analog_linearity_margin_2, doc, "analog_linearity_margin_2");
+
+    docToValue(analogOptions.analog_angle_snapping_1, doc, "analog_angle_snapping_1");
+    JsonArray directions = doc["analog_directions_1"];
+    int direction_count=0;
+    for (JsonObject d : directions) {
+        analogOptions.analog_directions_1[direction_count].angle = d["angle"];
+        analogOptions.analog_directions_1[direction_count].snap_margin = d["snap_margin"];
+        analogOptions.analog_directions_1[direction_count].activation = d["activation"];
+        analogOptions.analog_directions_1[direction_count].release = d["release"];
+        direction_count++;
+        if (direction_count >= ANALOG_MAX_DIRECTIONS) {
+            direction_count = ANALOG_MAX_DIRECTIONS;
+            break;
+        }
+    }
+    analogOptions.analog_direction_count_1 = direction_count;
+
+    docToValue(analogOptions.analog_angle_snapping_2, doc, "analog_angle_snapping_2");
+    directions = doc["analog_directions_2"];
+    direction_count=0;
+    for (JsonObject d : directions) {
+        analogOptions.analog_directions_2[direction_count].angle = d["angle"];
+        analogOptions.analog_directions_2[direction_count].snap_margin = d["snap_margin"];
+        analogOptions.analog_directions_2[direction_count].activation = d["activation"];
+        analogOptions.analog_directions_2[direction_count].release = d["release"];
+        direction_count++;
+        if (direction_count >= ANALOG_MAX_DIRECTIONS) {
+            direction_count = ANALOG_MAX_DIRECTIONS;
+            break;
+        }
+    }
+    analogOptions.analog_direction_count_2 = direction_count;
+
+}
+
+std::string getAnalogOptions()
+{
+    const size_t capacity = JSON_OBJECT_SIZE(500);
+    DynamicJsonDocument doc(capacity);
+
+    const AnalogOptions& analogOptions = Storage::getInstance().getAddonOptions().analogOptions;
+    writeDoc(doc, "analogAdc1PinX", cleanPin(analogOptions.analogAdc1PinX));
+    writeDoc(doc, "analogAdc1PinY", cleanPin(analogOptions.analogAdc1PinY));
+    writeDoc(doc, "analogAdc1Mode", analogOptions.analogAdc1Mode);
+    writeDoc(doc, "analogAdc1Invert", analogOptions.analogAdc1Invert);
+    writeDoc(doc, "analogAdc2PinX", cleanPin(analogOptions.analogAdc2PinX));
+    writeDoc(doc, "analogAdc2PinY", cleanPin(analogOptions.analogAdc2PinY));
+    writeDoc(doc, "analogAdc2Mode", analogOptions.analogAdc2Mode);
+    writeDoc(doc, "analogAdc2Invert", analogOptions.analogAdc2Invert);
+    writeDoc(doc, "forced_circularity", analogOptions.forced_circularity);
+    writeDoc(doc, "forced_circularity2", analogOptions.forced_circularity2);
+    writeDoc(doc, "inner_deadzone", analogOptions.inner_deadzone);
+    writeDoc(doc, "inner_deadzone2", analogOptions.inner_deadzone2);
+    writeDoc(doc, "outer_deadzone", analogOptions.outer_deadzone);
+    writeDoc(doc, "outer_deadzone2", analogOptions.outer_deadzone2);
+    writeDoc(doc, "auto_calibrate", analogOptions.auto_calibrate);
+    writeDoc(doc, "auto_calibrate2", analogOptions.auto_calibrate2);
+    writeDoc(doc, "joystickCenterX", analogOptions.joystick_center_x);
+    writeDoc(doc, "joystickCenterY", analogOptions.joystick_center_y);
+    writeDoc(doc, "joystickCenterX2", analogOptions.joystick_center_x2);
+    writeDoc(doc, "joystickCenterY2", analogOptions.joystick_center_y2);
+    writeDoc(doc, "analog_smoothing", analogOptions.analog_smoothing);
+    writeDoc(doc, "analog_smoothing2", analogOptions.analog_smoothing2);
+    writeDoc(doc, "smoothing_factor", analogOptions.smoothing_factor);
+    writeDoc(doc, "smoothing_factor2", analogOptions.smoothing_factor2);
+    writeDoc(doc, "analog_error", analogOptions.analog_error);
+    writeDoc(doc, "analog_error2", analogOptions.analog_error2);
+    writeDoc(doc, "AnalogInputEnabled", analogOptions.enabled);
+    writeDoc(doc, "analog_mux_channels", analogOptions.analog_mux_channels);
+    writeDoc(doc, "analogSelectPin0", analogOptions.analogSelectPin0);
+    writeDoc(doc, "analogSelectPin1", analogOptions.analogSelectPin1);
+    writeDoc(doc, "analogSelectPin2", analogOptions.analogSelectPin2);
+    writeDoc(doc, "analogSelectPin3", analogOptions.analogSelectPin3);
+    writeDoc(doc, "analog_mux_1", analogOptions.analog_mux_1);
+    writeDoc(doc, "analog_channel_x_1", analogOptions.analog_channel_x_1);
+    writeDoc(doc, "analog_channel_y_1", analogOptions.analog_channel_y_1);
+    writeDoc(doc, "analog_mux_2", analogOptions.analog_mux_2);
+    writeDoc(doc, "analog_channel_x_2", analogOptions.analog_channel_x_2);
+    writeDoc(doc, "analog_channel_y_2", analogOptions.analog_channel_y_2);
+    
+    writeDoc(doc, "analog_linearity_1", analogOptions.analog_linearity_1);
+    writeDoc(doc, "analog_linearity_margin_1", analogOptions.analog_linearity_margin_1);
+    writeDoc(doc, "analog_linearity_2", analogOptions.analog_linearity_2);
+    writeDoc(doc, "analog_linearity_margin_2", analogOptions.analog_linearity_margin_2);
+    
+    writeDoc(doc, "analog_angle_snapping_1", analogOptions.analog_angle_snapping_1);
+
+    JsonArray analog_snap_directions_1 = doc.createNestedArray("analog_directions_1");
+    for (int i = 0; i < analogOptions.analog_direction_count_1; i++) {
+        JsonObject direction = analog_snap_directions_1.createNestedObject();
+
+        direction["angle"] = analogOptions.analog_directions_1[i].angle;
+        direction["snap_margin"] = analogOptions.analog_directions_1[i].snap_margin;
+        direction["activation"] = analogOptions.analog_directions_1[i].activation;
+        direction["release"] = analogOptions.analog_directions_1[i].release;
+    }
+
+    writeDoc(doc, "analog_angle_snapping_2", analogOptions.analog_angle_snapping_2);    
+
+    JsonArray analog_snap_directions_2 = doc.createNestedArray("analog_directions_2");
+    for (int i = 0; i < analogOptions.analog_direction_count_2; i++) {
+        JsonObject direction = analog_snap_directions_2.createNestedObject();
+
+        direction["angle"] = analogOptions.analog_directions_2[i].angle;
+        direction["snap_margin"] = analogOptions.analog_directions_2[i].snap_margin;
+        direction["activation"] = analogOptions.analog_directions_2[i].activation;
+        direction["release"] = analogOptions.analog_directions_2[i].release;
+    }
+
+    return serialize_json(doc);
+}
+
 typedef std::string (*HandlerFuncPtr)();
 static const std::pair<const char*, HandlerFuncPtr> handlerFuncs[] =
 {
@@ -2786,6 +2902,7 @@ static const std::pair<const char*, HandlerFuncPtr> handlerFuncs[] =
     { "/api/getConfig", getConfig },
     { "/api/getJoystickPosition", getJoystickPosition },
     { "/api/setAnalogOptions", setAnalogOptions },
+    { "/api/getAnalogOptions", getAnalogOptions },
 #if !defined(NDEBUG)
     { "/api/echo", echo },
 #endif
