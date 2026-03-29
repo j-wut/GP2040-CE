@@ -475,6 +475,17 @@ app.get('/api/getAddonsOptions', (req, res) => {
 		smoothing_factor2: 5,
 		analog_error: 1000,
 		analog_error2: 1000,
+		analog_mux_channels: 8,
+		analogSelectPin0: 21,
+		analogSelectPin1: 22,
+		analogSelectPin2: 23,
+		analogSelectPin3: 24,
+		analog_mux_1: false,
+		analog_channel_x_1: 0,
+		analog_channel_y_1: 1,
+		analog_mux_2: false,
+		analog_channel_x_2: 3,
+		analog_channel_y_2: 4,
 		bootselButtonMap: 0,
 		buzzerPin: -1,
 		buzzerEnablePin: -1,
@@ -581,6 +592,14 @@ app.get('/api/getAddonsOptions', (req, res) => {
 		usedPins: Object.values(picoController),
 	});
 });
+
+
+app.post('/api/readJoystickPosition', (req, res) => {
+	return res.send({
+		x:2000,
+		y:2000,
+	})
+})
 
 app.get('/api/getExpansionPins', (req, res) => {
 	return res.send({

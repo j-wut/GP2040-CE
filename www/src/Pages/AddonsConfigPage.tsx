@@ -204,13 +204,16 @@ export default function AddonsConfigPage() {
 	}, []);
 
 	const onSuccess = async (values: typeof DEFAULT_VALUES) => {
+		console.log("stored:", storedData);
 		const flattened = flattenObject(storedData);
+		console.log("flattened:", flattened);
 
 		// Convert turbo LED color if available
 		const data = {
 			...values,
 			turboLedColor: hexToInt(values.turboLedColor || '#000000'),
 		};
+		console.log("data: ", data);
 		const valuesSchema = schema.cast(data); // Strip invalid values
 
 		// Compare what's changed and set it to resultObject
@@ -222,7 +225,9 @@ export default function AddonsConfigPage() {
 				set(resultObject, key, newVal);
 			}
 		});
+		console.log("result Data:", resultObject);
 		sanitizeData(resultObject);
+		console.log("sanitized Result:", resultObject);
 		const success = await WebApi.setAddonsOptions(resultObject);
 		setStoredData(JSON.parse(JSON.stringify(values))); // Update to reflect saved data
 		setSaveMessage(

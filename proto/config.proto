@@ -425,6 +425,45 @@ message AnalogOptions
     optional uint32 joystick_center_y = 25;
     optional uint32 joystick_center_x2 = 26;
     optional uint32 joystick_center_y2 = 27;
+
+    optional int32 analog_mux_channels = 28;
+    optional int32 analogSelectPin0 = 29;
+    optional int32 analogSelectPin1 = 30;
+    optional int32 analogSelectPin2 = 31;
+    optional int32 analogSelectPin3 = 32;
+
+    optional bool analog_mux_1 = 33;
+    optional int32 analog_channel_x_1 = 34;
+    optional int32 analog_channel_y_1 = 35;
+
+    optional bool analog_mux_2 = 36;
+    optional int32 analog_channel_x_2 = 37;
+    optional int32 analog_channel_y_2 = 38;
+
+    optional bool analog_linearity_1 = 39;
+    optional float analog_linearity_margin_1 = 40;
+
+    optional bool analog_linearity_2 = 41;
+    optional float analog_linearity_margin_2 = 42;
+
+    optional bool analog_angle_snapping_1 = 43;
+    optional int32 analog_direction_count_1 = 44;
+    repeated AnalogDirection analog_directions_1 = 45 [(nanopb).max_count = 16];
+
+    optional bool analog_angle_snapping_2 = 46;
+    optional int32 analog_direction_count_2 = 47;
+    repeated AnalogDirection analog_directions_2 = 48 [(nanopb).max_count = 16];
+
+    optional float analog_rotation_offset_1 = 49;
+    optional float analog_rotation_offset_2 = 50;
+}
+
+message AnalogDirection
+{
+    optional float angle = 1;
+    optional float snap_margin = 2;
+    optional float activation = 3;
+    optional float release = 4;
 }
 
 message TurboOptions

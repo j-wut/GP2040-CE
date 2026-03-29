@@ -45,6 +45,7 @@
 
 #include <cassert>
 #include <cstring>
+#include <math.h>
 #include <memory>
 
 #include "pico/platform.h"
@@ -621,6 +622,47 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, outer_deadzone2, DEFAULT_OUTER_DEADZONE2);
     INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, auto_calibrate2, !!AUTO_CALIBRATE2_ENABLED);
     INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, forced_circularity2, !!FORCED_CIRCULARITY2_ENABLED);
+    
+    // analog with mux
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_mux_channels, ANALOG_MUX_CHANNELS);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analogSelectPin0, ANALOG_DEFAULT_SELECT_PIN_0);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analogSelectPin1, ANALOG_DEFAULT_SELECT_PIN_1);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analogSelectPin2, ANALOG_DEFAULT_SELECT_PIN_2);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analogSelectPin3, ANALOG_DEFAULT_SELECT_PIN_3);
+
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_mux_1, !!ANALOG_MUX_1_ENABLED);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_channel_x_1, ANALOG_MUX_CHANNEL_X_1);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_channel_y_1, ANALOG_MUX_CHANNEL_Y_1);
+
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_mux_2, !!ANALOG_MUX_2_ENABLED);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_channel_x_2, ANALOG_MUX_CHANNEL_X_2);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_channel_y_2, ANALOG_MUX_CHANNEL_Y_2);
+
+    // analog linearity & angle snapping
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_linearity_1, !!ANALOG_LINEARITY_ENABLED_1);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_linearity_margin_1, ANALOG_LINEARITY_MARGIN_1);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_angle_snapping_1, !!ANALOG_ANGLE_SNAPPING_ENABLED_1);
+
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_linearity_2, !!ANALOG_LINEARITY_ENABLED_2);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_linearity_margin_2, ANALOG_LINEARITY_MARGIN_2);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_angle_snapping_2, !!ANALOG_ANGLE_SNAPPING_ENABLED_2);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_rotation_offset_1, ANALOG_ROTATION_OFFSET);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_rotation_offset_2, ANALOG_ROTATION_OFFSET);
+
+    // Set 8-way directions
+    for(int i = 0; i < ANALOG_DIRECTION_COUNT_1; i++) {
+        INIT_UNSET_PROPERTY(config.addonOptions.analogOptions.analog_directions_1[i], angle, (float)i * M_PI / 4.0);
+        INIT_UNSET_PROPERTY(config.addonOptions.analogOptions.analog_directions_1[i], snap_margin, M_PI / 8.0);
+        INIT_UNSET_PROPERTY(config.addonOptions.analogOptions.analog_directions_1[i], activation, (float)DEFAULT_INNER_DEADZONE);
+        INIT_UNSET_PROPERTY(config.addonOptions.analogOptions.analog_directions_1[i], release, (float)DEFAULT_OUTER_DEADZONE );
+    }
+
+    for(int i = 0; i < ANALOG_DIRECTION_COUNT_2; i++) {
+        INIT_UNSET_PROPERTY(config.addonOptions.analogOptions.analog_directions_2[i], angle, (float)i * M_PI / 4.0);
+        INIT_UNSET_PROPERTY(config.addonOptions.analogOptions.analog_directions_2[i], snap_margin, M_PI / 8.0);
+        INIT_UNSET_PROPERTY(config.addonOptions.analogOptions.analog_directions_2[i], activation, (float)DEFAULT_INNER_DEADZONE);
+        INIT_UNSET_PROPERTY(config.addonOptions.analogOptions.analog_directions_2[i], release, (float)DEFAULT_OUTER_DEADZONE );
+    }
 
     // addonOptions.turboOptions
     INIT_UNSET_PROPERTY(config.addonOptions.turboOptions, enabled, !!TURBO_ENABLED);
