@@ -650,6 +650,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_rotation_offset_2, ANALOG_ROTATION_OFFSET);
 
     // Set 8-way directions
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_direction_count_1, ANALOG_DIRECTION_COUNT_1);
     for(int i = 0; i < ANALOG_DIRECTION_COUNT_1; i++) {
         INIT_UNSET_PROPERTY(config.addonOptions.analogOptions.analog_directions_1[i], angle, (float)i * M_PI / 4.0);
         INIT_UNSET_PROPERTY(config.addonOptions.analogOptions.analog_directions_1[i], snap_margin, M_PI / 8.0);
@@ -657,12 +658,17 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
         INIT_UNSET_PROPERTY(config.addonOptions.analogOptions.analog_directions_1[i], release, (float)DEFAULT_OUTER_DEADZONE );
     }
 
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_direction_count_2, ANALOG_DIRECTION_COUNT_2);
     for(int i = 0; i < ANALOG_DIRECTION_COUNT_2; i++) {
         INIT_UNSET_PROPERTY(config.addonOptions.analogOptions.analog_directions_2[i], angle, (float)i * M_PI / 4.0);
         INIT_UNSET_PROPERTY(config.addonOptions.analogOptions.analog_directions_2[i], snap_margin, M_PI / 8.0);
         INIT_UNSET_PROPERTY(config.addonOptions.analogOptions.analog_directions_2[i], activation, (float)DEFAULT_INNER_DEADZONE);
         INIT_UNSET_PROPERTY(config.addonOptions.analogOptions.analog_directions_2[i], release, (float)DEFAULT_OUTER_DEADZONE );
     }
+
+    // tell nanopb to persist 16 directions worth of data
+    config.addonOptions.analogOptions.analog_directions_1_count = ANALOG_MAX_DIRECTIONS;
+    config.addonOptions.analogOptions.analog_directions_2_count = ANALOG_MAX_DIRECTIONS;
 
     // addonOptions.turboOptions
     INIT_UNSET_PROPERTY(config.addonOptions.turboOptions, enabled, !!TURBO_ENABLED);
