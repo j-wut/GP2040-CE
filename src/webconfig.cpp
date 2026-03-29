@@ -2773,6 +2773,9 @@ std::string setAnalogOptions()
     }
     analogOptions.analog_direction_count_2 = direction_count;
 
+    docToValue(analogOptions.analog_rotation_offset_1, doc, "analog_rotation_offset_1");
+    docToValue(analogOptions.analog_rotation_offset_2, doc, "analog_rotation_offset_2");
+
     EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
 
     return serialize_json(doc);
@@ -2853,6 +2856,9 @@ std::string getAnalogOptions()
         direction["activation"] = analogOptions.analog_directions_2[i].activation;
         direction["release"] = analogOptions.analog_directions_2[i].release;
     }
+
+    writeDoc(doc, "analog_rotation_offset_1", analogOptions.analog_rotation_offset_1);
+    writeDoc(doc, "analog_rotation_offset_2", analogOptions.analog_rotation_offset_2);
 
     return serialize_json(doc);
 }

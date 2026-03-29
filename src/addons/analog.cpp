@@ -44,6 +44,7 @@ void AnalogInput::setup() {
     adc_pairs[0].angle_snapping = analogOptions.analog_angle_snapping_1;
     adc_pairs[0].snap_direction_count = analogOptions.analog_direction_count_1;
     adc_pairs[0].snap_directions = analogOptions.analog_directions_1;
+    adc_pairs[0].angle_offset = analogOptions.analog_rotation_offset_1;
 
 
     adc_pairs[1].x_pin = analogOptions.analogAdc2PinX;
@@ -68,6 +69,7 @@ void AnalogInput::setup() {
     adc_pairs[1].angle_snapping = analogOptions.analog_angle_snapping_2;
     adc_pairs[1].snap_direction_count = analogOptions.analog_direction_count_2;
     adc_pairs[1].snap_directions = analogOptions.analog_directions_2;
+    adc_pairs[1].angle_offset = analogOptions.analog_rotation_offset_2;
 
     // Setup defaults and helpers
     for (int i = 0; i < ADC_COUNT; i++) {
@@ -267,7 +269,7 @@ void AnalogInput::setRadianDirection(adc_instance & adc_inst) {
     if (angle < 0) {
         angle = angle + 2.0 * M_PI;
     }
-    adc_inst.xy_radians = angle;
+    adc_inst.xy_radians = angle + adc_inst.angle_offset;
 }
 
 void AnalogInput::correctLinearity(adc_instance & adc_inst) {

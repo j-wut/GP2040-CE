@@ -199,6 +199,10 @@
 #define ANALOG_DIRECTION_COUNT_2 ANALOG_DEFAULT_DIRECTIONS
 #endif
 
+#ifndef ANALOG_ROTATION_OFFSET
+#define ANALOG_ROTATION_OFFSET 0
+#endif
+
 
 // Analog Module Name
 #define AnalogName "Analog"
@@ -243,6 +247,7 @@ typedef struct
     bool angle_snapping;
     int snap_direction_count;
     const AnalogDirection * snap_directions;
+    float angle_offset;
 } adc_instance;
 
 class AnalogInput : public GPAddon {

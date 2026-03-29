@@ -453,6 +453,9 @@ message AnalogOptions
     optional bool analog_angle_snapping_2 = 46;
     optional int32 analog_direction_count_2 = 47;
     repeated AnalogDirection analog_directions_2 = 48 [(nanopb).max_count = 16];
+
+    optional float analog_rotation_offset_1 = 49;
+    optional float analog_rotation_offset_2 = 50;
 }
 
 message AnalogDirection

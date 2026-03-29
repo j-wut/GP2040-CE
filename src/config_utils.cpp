@@ -646,6 +646,8 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_linearity_2, !!ANALOG_LINEARITY_ENABLED_2);
     INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_linearity_margin_2, ANALOG_LINEARITY_MARGIN_2);
     INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_angle_snapping_2, !!ANALOG_ANGLE_SNAPPING_ENABLED_2);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_rotation_offset_1, ANALOG_ROTATION_OFFSET);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_rotation_offset_2, ANALOG_ROTATION_OFFSET);
 
     // Set 8-way directions
     for(int i = 0; i < ANALOG_DIRECTION_COUNT_1; i++) {
