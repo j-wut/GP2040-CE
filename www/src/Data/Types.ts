@@ -1,5 +1,3 @@
-import { number } from "yup";
-
 export interface GetJoystickPositionRequest {
     channels: number;
     selectPins: number[];
@@ -8,7 +6,7 @@ export interface GetJoystickPositionRequest {
     yChannel: number;
     yAdcPin: number;
 }
-export interface GetJoystickPositionResponse {
+export interface JoystickPosition {
     x: number;
     y: number;
 }
@@ -80,8 +78,11 @@ export interface AnalogOptions {
     analog_linearity_margin_2: number;
 
     analog_angle_snapping_1: boolean;
-    analog_directions_1: AnalogSnapDirection;
+    analog_directions_1: AnalogSnapDirection[];
     
     analog_angle_snapping_2: boolean;
-    analog_directions_2: AnalogSnapDirection;
+    analog_directions_2: AnalogSnapDirection[];
+
+    analog_rotational_offset_1: number;
+    analog_rotational_offset_2: number;
 }

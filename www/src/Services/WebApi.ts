@@ -1,4 +1,4 @@
-import { AnalogOptions, GetJoystickPositionRequest, GetJoystickPositionResponse } from 'src/Data/Types';
+import { AnalogOptions, GetJoystickPositionRequest, JoystickPosition } from 'src/Data/Types';
 import Http from './Http';
 import { hexToInt, rgbIntToHex } from './Utilities';
 
@@ -692,7 +692,7 @@ async function abortGetHeldPins() {
 	}
 }
 
-async function getJoystickPosition(request: GetJoystickPositionRequest): Promise<GetJoystickPositionResponse> {
+async function getJoystickPosition(request: GetJoystickPositionRequest): Promise<JoystickPosition> {
 	return Http.post(`${baseUrl}/api/getJoystickPosition`, request)
 		.then(res => res.data)
 		.catch(console.error);
@@ -700,6 +700,12 @@ async function getJoystickPosition(request: GetJoystickPositionRequest): Promise
 
 async function setAnalogSettings(request: Partial<AnalogOptions>): Promise<AnalogOptions> {
 	return Http.post(`${baseUrl}/api/setAnalogOptions`, request)
+		.then(res => res.data)
+		.catch(console.error);
+}
+
+async function getAnalogSettings(): Promise<AnalogOptions> {
+	return Http.get(`${baseUrl}/api/getAnalogOptions`)
 		.then(res => res.data)
 		.catch(console.error);
 }
@@ -757,5 +763,7 @@ export default {
 	getHeldPins,
 	abortGetHeldPins,
 	getJoystickPosition,
+	setAnalogSettings,
+	getAnalogSettings,
 	reboot,
 };

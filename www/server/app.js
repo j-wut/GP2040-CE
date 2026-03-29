@@ -475,17 +475,78 @@ app.get('/api/getAddonsOptions', (req, res) => {
 		smoothing_factor2: 5,
 		analog_error: 1000,
 		analog_error2: 1000,
-		analog_mux_channels: 8,
-		analogSelectPin0: 21,
-		analogSelectPin1: 22,
-		analogSelectPin2: 23,
-		analogSelectPin3: 24,
-		analog_mux_1: false,
-		analog_channel_x_1: 0,
-		analog_channel_y_1: 1,
-		analog_mux_2: false,
-		analog_channel_x_2: 3,
-		analog_channel_y_2: 4,
+		"analog_mux_channels": 8,
+    "analogSelectPin0": 21,
+    "analogSelectPin1": 22,
+    "analogSelectPin2": 20,
+    "analogSelectPin3": 0,
+    "analog_mux_1": 1,
+    "analog_channel_x_1": 0,
+    "analog_channel_y_1": 2,
+    "analog_mux_2": 0,
+    "analog_channel_x_2": 0,
+    "analog_channel_y_2": 1,
+    "analog_linearity_1": 1,
+    "analog_linearity_margin_1": 0.08726646,
+    "analog_linearity_2": 0,
+    "analog_linearity_margin_2": 0,
+    "analog_angle_snapping_1": 1,
+    "analog_direction_count_1": 8,
+    "analog_directions_1": [
+        {
+            "angle": 0,
+            "snap_margin": 0.6981317007977318,
+            "activation": 5,
+            "release": 95
+        },
+        {
+            "angle": 0.785398185,
+            "snap_margin": 0.08726646259971647,
+            "activation": 5,
+            "release": 95
+        },
+        {
+            "angle": 1.570796371,
+            "snap_margin": 0.6981317007977318,
+            "activation": 5,
+            "release": 95
+        },
+        {
+            "angle": 2.356194496,
+            "snap_margin": 0.08726646259971647,
+            "activation": 5,
+            "release": 95
+        },
+        {
+            "angle": 3.141592741,
+            "snap_margin": 0.6981317007977318,
+            "activation": 5,
+            "release": 95
+        },
+        {
+            "angle": 3.926990747,
+            "snap_margin": 0.08726646259971647,
+            "activation": 5,
+            "release": 95
+        },
+        {
+            "angle": 4.712388992,
+            "snap_margin": 0.6981317007977318,
+            "activation": 5,
+            "release": 95
+        },
+        {
+            "angle": 5.497786999,
+            "snap_margin": 0.08726646259971647,
+            "activation": 5,
+            "release": 95
+        }
+    ],
+    "analog_angle_snapping_2": 0,
+    "analog_direction_count_2": 0,
+    "analog_directions_2": [],
+    "analog_rotation_offset_1": 0.015669628,
+    "analog_rotation_offset_2": 0,
 		bootselButtonMap: 0,
 		buzzerPin: -1,
 		buzzerEnablePin: -1,
@@ -593,6 +654,61 @@ app.get('/api/getAddonsOptions', (req, res) => {
 	});
 });
 
+app.get('/api/getAnalogOptions', (req, res) => {
+	return res.send({
+		AnalogInputEnabled: false,
+		analogAdc1PinX: -1,
+		analogAdc1PinY: -1,
+		analogAdc1Mode: 1,
+		analogAdc1Invert: 0,
+		analogAdc2PinX: -1,
+		analogAdc2PinY: -1,
+		analogAdc2Mode: 2,
+		analogAdc2Invert: 0,
+		forced_circularity: false,
+		forced_circularity2: false,
+		inner_deadzone: 5,
+		inner_deadzone2: 5,
+		outer_deadzone: 95,
+		outer_deadzone2: 95,
+		auto_calibrate: false,
+		auto_calibrate2: false,
+		joystickCenterX: 0,
+		joystickCenterY: 0,
+		joystickCenterX2: 0,
+		joystickCenterY2: 0,
+		analog_smoothing: false,
+		analog_smoothing2: false,
+		smoothing_factor: 5,
+		smoothing_factor2: 5,
+		analog_error: 1,
+		analog_error2: 1,
+
+		analog_mux_channels: 8,
+		analogSelectPin0: -1,
+		analogSelectPin1: -1,
+		analogSelectPin2: -1,
+		analogSelectPin3: -1,
+
+		analog_mux_1: false,
+		analog_channel_x_1: -1,
+		analog_channel_y_1: -1,
+
+		analog_mux_2: false,
+		analog_channel_x_2: -1,
+		analog_channel_y_2: -1,
+		analog_linearity_1: false,
+		analog_linearity_margin_1: 0,
+		analog_linearity_2: false,
+		analog_linearity_margin_2: 0,
+		analog_angle_snapping_1: false,
+		analog_directions_1: [],
+		analog_angle_snapping_2: false,
+		analog_directions_2: [],
+		analog_rotational_offset_1: 0,
+		analog_rotational_offset_2: 0
+	});
+});
 
 app.post('/api/readJoystickPosition', (req, res) => {
 	return res.send({
