@@ -264,12 +264,12 @@ float AnalogInput::magnitudeCalculation(int stick_num, adc_instance & adc_inst) 
 }
 
 void AnalogInput::setRadianDirection(adc_instance & adc_inst) {
-    // should be range from 0 - 2pi
-    float angle = std::atan2(adc_inst.y_magnitude, adc_inst.x_magnitude);
+    // counter-clockwise from x axis
+    float angle = std::atan2(adc_inst.y_magnitude, adc_inst.x_magnitude) - adc_inst.angle_offset;
     if (angle < 0) {
         angle = angle + 2.0 * M_PI;
     }
-    adc_inst.xy_radians = angle + adc_inst.angle_offset;
+    adc_inst.xy_radians = angle ;
 }
 
 void AnalogInput::correctLinearity(adc_instance & adc_inst) {

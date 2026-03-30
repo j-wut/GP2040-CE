@@ -1,7 +1,7 @@
 import * as d3 from "d3";
 import { useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Col, FormCheck, Row, Tab, Tabs } from 'react-bootstrap';
+import { Button, Col, FormCheck, Row, Tab, Tabs } from 'react-bootstrap';
 import * as yup from 'yup';
 
 import Section from '../Components/Section';
@@ -11,8 +11,9 @@ import AnalogPinOptions from '../Components/AnalogPinOptions';
 import { AppContext } from '../Contexts/AppContext';
 import FormControl from '../Components/FormControl';
 import { AddonPropTypes } from '../Pages/AddonsConfigPage';
-import { AnalogInvertMode, AnalogMode, AnalogOptions, AnalogSnapDirection, GetJoystickPositionRequest, JoystickPosition } from '../Data/Types';
+import { ADC_MAX, AnalogInvertMode, AnalogMode, AnalogOptions, AnalogSnapDirection, GetJoystickPositionRequest, JoystickPosition } from '../Data/Types';
 import WebApi from '../Services/WebApi';
+import { set } from "lodash";
 
 const ANALOG_STICK_MODES = [
 	{ label: 'Left Analog', value: AnalogMode.LEFT_ANALOG },
@@ -271,36 +272,29 @@ const colors = [
 	"aliceblue"
 ]
 
-const getCorrectedPosition =  (config: AnalogOptions, position: JoystickPosition) => {
-
-}
-
-const AnalogVisualization = (config: AnalogOptions, position: JoystickPosition)=> {
-	let directions = config.analog_directions_1;
-	console.log(directions);
-	let pathD = directions.map((d) =>d3.arc().innerRadius(d.activation).outerRadius(d.release).startAngle(d.angle-d.snap_margin).endAngle(d.angle+d.snap_margin)());
-	console.log(pathD);
-
-	return (
-	<svg viewBox={`-100 -100 200 200`}> {/* at some point have to figure out why this is dumb as fuck */}
-		<circle fill="white" stroke="black" strokeWidth="1" cx="0" cy="0" r={100}/>
-		{
-		pathD.map((d, i) => <path x="50%" y="50%" stroke={colors[i % colors.length]} fill={colors[i % colors.length]} fillOpacity="80%" strokeWidth="2" d={d}/>)
-		}
-	</svg>
-  );
-
-}
-
-
 const Analog = ({ errors, handleChange, handleCheckbox, setFieldValue }: AddonPropTypes) => {
 	const [analogConfig , setAnalogConfig] = useState(analogState);
-
 	const timerId = useRef<number>();
+	const [center, setCenter] = useState({x:0,y:0});
 	const [joystickPosition, setJoystickPosition] = useState({x:0,y:0});
 	const [correctedPosition, setCorrectedPosition] = useState({x:0,y:0});
 	const { usedPins } = useContext(AppContext);
 	const { t } = useTranslation();
+
+	const toggleConfig = (e)=> {
+		console.log(e);
+		console.log(e.target.value);
+		let changedAttributeName: string = e.target.name;
+		const newConfigState: AnalogOptions = {...analogConfig};
+		newConfigState[changedAttributeName] = !(e.target.value == "on");
+		setAnalogConfig(newConfigState);
+	}
+
+	const setConfig = (field: string, value: any)=>{
+		const newConfigState: AnalogOptions = {...analogConfig};
+		newConfigState[field] = value;
+		setAnalogConfig(newConfigState);
+	}
 
 	useEffect(()=>{
 		const getAnalogConfig = async ()=> await WebApi.getAnalogSettings();
@@ -308,6 +302,29 @@ const Analog = ({ errors, handleChange, handleCheckbox, setFieldValue }: AddonPr
 			setAnalogConfig
 		);
 	}, [])
+
+	useEffect(()=>{
+		if(analogConfig.auto_calibrate){
+			WebApi.getJoystickPosition({
+				channels: analogConfig.analog_mux_channels,
+				selectPins: [analogConfig.analogSelectPin0, analogConfig.analogSelectPin1, analogConfig.analogSelectPin2, analogConfig.analogSelectPin3],
+				xChannel: analogConfig.analog_channel_x_1,
+				xAdcPin: analogConfig.analogAdc1PinX,
+				yChannel: analogConfig.analog_channel_y_1,
+				yAdcPin: analogConfig.analogAdc1PinY
+			}).then(setCenter);
+		} else {
+			setCenter({x: analogConfig.joystickCenterX, y: analogConfig.joystickCenterY});
+		}
+	}, [analogConfig])
+
+	useEffect(()=>{
+		let magnitude_x = joystickPosition.x - center.x;
+		let magnitude_y = joystickPosition.y - center.y;
+		let magnitude_xy = Math.sqrt(magnitude_x * magnitude_x + magnitude_y * magnitude_y);
+		let radians =  Math.atan2(magnitude_y, magnitude_x) - analogConfig.analog_rotation_offset_1;
+		setCorrectedPosition({x: magnitude_xy * Math.cos(radians)+ center.x, y: magnitude_xy * Math.sin(radians)+center.y});
+	}, [joystickPosition])
 
 	const readJoystickPosition = async () => {
 		let position = await WebApi.getJoystickPosition({
@@ -318,6 +335,12 @@ const Analog = ({ errors, handleChange, handleCheckbox, setFieldValue }: AddonPr
 			yChannel: analogConfig.analog_channel_y_1,
 			yAdcPin: analogConfig.analogAdc1PinY
 		});
+		if (analogConfig.analogAdc1Invert == AnalogInvertMode.XY_AXIS || analogConfig.analogAdc1Invert == AnalogInvertMode.X_AXIS) {
+			position.x = ADC_MAX - position.x;
+		}
+		if (analogConfig.analogAdc1Invert == AnalogInvertMode.XY_AXIS || analogConfig.analogAdc1Invert == AnalogInvertMode.Y_AXIS) {
+			position.y = ADC_MAX - position.y;
+		}
 		setJoystickPosition(position);
 	}
 
@@ -327,12 +350,38 @@ const Analog = ({ errors, handleChange, handleCheckbox, setFieldValue }: AddonPr
 	};
 
 	const startVisualization = async () => {
+		if (analogConfig.auto_calibrate) {
+			WebApi.getJoystickPosition({
+				channels: analogConfig.analog_mux_channels,
+				selectPins: [analogConfig.analogSelectPin0, analogConfig.analogSelectPin1, analogConfig.analogSelectPin2, analogConfig.analogSelectPin3],
+				xChannel: analogConfig.analog_channel_x_1,
+				xAdcPin: analogConfig.analogAdc1PinX,
+				yChannel: analogConfig.analog_channel_y_1,
+				yAdcPin: analogConfig.analogAdc1PinY
+			}).then(setCenter)
+		}
 		if (timerId.current)
 			clearInterval(timerId.current);
 		const intervalId = setInterval(() => {
 			readJoystickPosition();
 		}, 50);
 		timerId.current = intervalId;
+	}
+
+	const AnalogVisualization = ()=> {
+		let directions = analogConfig.analog_directions_1;
+		let pathD = directions.reverse().map((d) =>d3.arc().innerRadius(d.activation).outerRadius(d.release).startAngle(d.angle-d.snap_margin).endAngle(d.angle+d.snap_margin)());
+
+		return (
+			<svg viewBox={`-100 -100 200 200`}> {/* at some point have to figure out why this is dumb as fuck */}
+				<circle fill="white" stroke="black" strokeWidth="1" cx="0" cy="0" r={100}/>
+				{
+				pathD.map((d, i) => <path x="0" y="0"  fillOpacity="40%" strokeWidth="2" d={d}/>)
+				}
+				<circle fill="black" fillOpacity="50%" cx={(joystickPosition.x - center.x)/(ADC_MAX - center.x)*100} cy={(joystickPosition.y - center.y)/(ADC_MAX - center.y)*100} r={3}/>
+				<circle fill="crimson" fillOpacity="100%" cx={(correctedPosition.x - center.x)/(ADC_MAX - center.x)*100} cy={(correctedPosition.y - center.y)/(ADC_MAX - center.y)*100} r={3}/>
+			</svg>
+		);
 	}
 
 	
@@ -706,14 +755,11 @@ const Analog = ({ errors, handleChange, handleCheckbox, setFieldValue }: AddonPr
 								<FormCheck
 									label={t('AddonsConfig:analog-auto-calibrate')}
 									type="switch"
-									id="Auto_calibrate"
+									name="auto_calibrate"
 									className="col-sm-3 ms-3"
 									isInvalid={false}
-									checked={Boolean(analogConfig.auto_calibrate)}
-									onChange={(e) => {
-										handleCheckbox('auto_calibrate');
-										handleChange(e);
-									}}
+									checked={analogConfig.auto_calibrate}
+									onChange={toggleConfig}
 								/>
 								<button
 									type="button"
@@ -739,8 +785,8 @@ const Analog = ({ errors, handleChange, handleCheckbox, setFieldValue }: AddonPr
 											const avgY = Math.round(calibrationValues.reduce((sum, val) => sum + val.y, 0) / 4);
 											
 											// Update joystick 1 center values
-											setFieldValue('joystickCenterX', avgX);
-											setFieldValue('joystickCenterY', avgY);
+											setConfig('joystickCenterX', avgX);
+											setConfig('joystickCenterY', avgY);
 											
 											console.log('Calibration completed:', {
 												values: calibrationValues,
@@ -792,10 +838,13 @@ const Analog = ({ errors, handleChange, handleCheckbox, setFieldValue }: AddonPr
 						</Row>
 						</Col>
 						<Col>
-						<div>
-						{AnalogVisualization(analogConfig)}
+						<Row>
+							<Button onClick={startVisualization}>Start</Button>
+							<Button onClick={stopVisualization}>Stop</Button>
+						</Row>
 
-						</div>
+						{AnalogVisualization()}
+
 						</Col>
 						</Row>
 					</Tab>

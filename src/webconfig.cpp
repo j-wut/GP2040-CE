@@ -2749,8 +2749,7 @@ std::string setAnalogOptions()
         analogOptions.analog_directions_1[direction_count].snap_margin = d["snap_margin"];
         analogOptions.analog_directions_1[direction_count].activation = d["activation"];
         analogOptions.analog_directions_1[direction_count].release = d["release"];
-        direction_count++;
-        if (direction_count >= ANALOG_MAX_DIRECTIONS) {
+        if (++direction_count >= ANALOG_MAX_DIRECTIONS) {
             direction_count = ANALOG_MAX_DIRECTIONS;
             break;
         }
@@ -2765,8 +2764,7 @@ std::string setAnalogOptions()
         analogOptions.analog_directions_2[direction_count].snap_margin = d["snap_margin"];
         analogOptions.analog_directions_2[direction_count].activation = d["activation"];
         analogOptions.analog_directions_2[direction_count].release = d["release"];
-        direction_count++;
-        if (direction_count >= ANALOG_MAX_DIRECTIONS) {
+        if (++direction_count >= ANALOG_MAX_DIRECTIONS) {
             direction_count = ANALOG_MAX_DIRECTIONS;
             break;
         }
