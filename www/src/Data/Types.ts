@@ -1,3 +1,5 @@
+export const ADC_MAX = 4095;
+
 export interface GetJoystickPositionRequest {
     channels: number;
     selectPins: number[];
@@ -31,6 +33,7 @@ export interface AnalogSnapDirection {
 }
 
 export interface AnalogOptions {
+    [keyName: string]: any;
 	AnalogInputEnabled: boolean;
 	analogAdc1PinX: number;
 	analogAdc1PinY: number;
@@ -83,6 +86,6 @@ export interface AnalogOptions {
     analog_angle_snapping_2: boolean;
     analog_directions_2: AnalogSnapDirection[];
 
-    analog_rotational_offset_1: number;
-    analog_rotational_offset_2: number;
+    analog_rotation_offset_1: number;
+    analog_rotation_offset_2: number;
 }
