@@ -1,5 +1,5 @@
-import * as d3 from "d3";
-import { useContext, useEffect, useRef, useState } from 'react';
+
+import { ReactElement, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Col, FormCheck, Row, Tab, Tabs } from 'react-bootstrap';
 import * as yup from 'yup';
@@ -14,6 +14,7 @@ import { AddonPropTypes } from '../Pages/AddonsConfigPage';
 import { ADC_MAX, AnalogInvertMode, AnalogMode, AnalogOptions, AnalogSnapDirection, GetJoystickPositionRequest, JoystickPosition } from '../Data/Types';
 import WebApi from '../Services/WebApi';
 import { set } from "lodash";
+import AnalogCalibration from "../Components/AnalogCalibration";
 
 const ANALOG_STICK_MODES = [
 	{ label: 'Left Analog', value: AnalogMode.LEFT_ANALOG },
@@ -253,33 +254,19 @@ export const analogState: AnalogOptions = {
 	analog_rotational_offset_2: 0
 };
 
-const colors = [
-	"red",
-	"orange",
-	"yellow",
-	"green",
-	"blue",
-	"indigo",
-	"violet",
-	"teal",
-	"cyan",
-	"magenta",
-	"azure",
-	"deeppink",
-	"navy",
-	"lawngreen",
-	"coral",
-	"aliceblue"
-]
-
 const Analog = ({ errors, handleChange, handleCheckbox, setFieldValue }: AddonPropTypes) => {
 	const [analogConfig , setAnalogConfig] = useState(analogState);
-	const timerId = useRef<number>();
-	const [center, setCenter] = useState({x:0,y:0});
-	const [joystickPosition, setJoystickPosition] = useState({x:0,y:0});
-	const [correctedPosition, setCorrectedPosition] = useState({x:0,y:0});
+	const [showCalibration, setShowCalibration] = useState(false);
 	const { usedPins } = useContext(AppContext);
 	const { t } = useTranslation();
+
+	const startCalibration = () => {
+		setShowCalibration(true);
+	}
+
+	const hideCalibration = () => {
+		setShowCalibration(false);
+	}
 
 	const toggleConfig = (e)=> {
 		console.log(e);
@@ -303,86 +290,6 @@ const Analog = ({ errors, handleChange, handleCheckbox, setFieldValue }: AddonPr
 		);
 	}, [])
 
-	useEffect(()=>{
-		if(analogConfig.auto_calibrate){
-			WebApi.getJoystickPosition({
-				channels: analogConfig.analog_mux_channels,
-				selectPins: [analogConfig.analogSelectPin0, analogConfig.analogSelectPin1, analogConfig.analogSelectPin2, analogConfig.analogSelectPin3],
-				xChannel: analogConfig.analog_channel_x_1,
-				xAdcPin: analogConfig.analogAdc1PinX,
-				yChannel: analogConfig.analog_channel_y_1,
-				yAdcPin: analogConfig.analogAdc1PinY
-			}).then(setCenter);
-		} else {
-			setCenter({x: analogConfig.joystickCenterX, y: analogConfig.joystickCenterY});
-		}
-	}, [analogConfig])
-
-	useEffect(()=>{
-		let magnitude_x = joystickPosition.x - center.x;
-		let magnitude_y = joystickPosition.y - center.y;
-		let magnitude_xy = Math.sqrt(magnitude_x * magnitude_x + magnitude_y * magnitude_y);
-		let radians =  Math.atan2(magnitude_y, magnitude_x) - analogConfig.analog_rotation_offset_1;
-		setCorrectedPosition({x: magnitude_xy * Math.cos(radians)+ center.x, y: magnitude_xy * Math.sin(radians)+center.y});
-	}, [joystickPosition])
-
-	const readJoystickPosition = async () => {
-		let position = await WebApi.getJoystickPosition({
-			channels: analogConfig.analog_mux_channels,
-			selectPins: [analogConfig.analogSelectPin0, analogConfig.analogSelectPin1, analogConfig.analogSelectPin2, analogConfig.analogSelectPin3],
-			xChannel: analogConfig.analog_channel_x_1,
-			xAdcPin: analogConfig.analogAdc1PinX,
-			yChannel: analogConfig.analog_channel_y_1,
-			yAdcPin: analogConfig.analogAdc1PinY
-		});
-		if (analogConfig.analogAdc1Invert == AnalogInvertMode.XY_AXIS || analogConfig.analogAdc1Invert == AnalogInvertMode.X_AXIS) {
-			position.x = ADC_MAX - position.x;
-		}
-		if (analogConfig.analogAdc1Invert == AnalogInvertMode.XY_AXIS || analogConfig.analogAdc1Invert == AnalogInvertMode.Y_AXIS) {
-			position.y = ADC_MAX - position.y;
-		}
-		setJoystickPosition(position);
-	}
-
-	const stopVisualization = async () => {
-		if (timerId)
-			clearInterval(timerId.current);
-	};
-
-	const startVisualization = async () => {
-		if (analogConfig.auto_calibrate) {
-			WebApi.getJoystickPosition({
-				channels: analogConfig.analog_mux_channels,
-				selectPins: [analogConfig.analogSelectPin0, analogConfig.analogSelectPin1, analogConfig.analogSelectPin2, analogConfig.analogSelectPin3],
-				xChannel: analogConfig.analog_channel_x_1,
-				xAdcPin: analogConfig.analogAdc1PinX,
-				yChannel: analogConfig.analog_channel_y_1,
-				yAdcPin: analogConfig.analogAdc1PinY
-			}).then(setCenter)
-		}
-		if (timerId.current)
-			clearInterval(timerId.current);
-		const intervalId = setInterval(() => {
-			readJoystickPosition();
-		}, 50);
-		timerId.current = intervalId;
-	}
-
-	const AnalogVisualization = ()=> {
-		let directions = analogConfig.analog_directions_1;
-		let pathD = directions.reverse().map((d) =>d3.arc().innerRadius(d.activation).outerRadius(d.release).startAngle(d.angle-d.snap_margin).endAngle(d.angle+d.snap_margin)());
-
-		return (
-			<svg viewBox={`-100 -100 200 200`}> {/* at some point have to figure out why this is dumb as fuck */}
-				<circle fill="white" stroke="black" strokeWidth="1" cx="0" cy="0" r={100}/>
-				{
-				pathD.map((d, i) => <path x="0" y="0"  fillOpacity="40%" strokeWidth="2" d={d}/>)
-				}
-				<circle fill="black" fillOpacity="50%" cx={(joystickPosition.x - center.x)/(ADC_MAX - center.x)*100} cy={(joystickPosition.y - center.y)/(ADC_MAX - center.y)*100} r={3}/>
-				<circle fill="crimson" fillOpacity="100%" cx={(correctedPosition.x - center.x)/(ADC_MAX - center.x)*100} cy={(correctedPosition.y - center.y)/(ADC_MAX - center.y)*100} r={3}/>
-			</svg>
-		);
-	}
 
 	
 	const getCalibrationValues = async (params: GetJoystickPositionRequest): Promise <{
@@ -459,6 +366,12 @@ const Analog = ({ errors, handleChange, handleCheckbox, setFieldValue }: AddonPr
 		}
 		>
 			<div id="AnalogInputOptions" hidden={!analogConfig.AnalogInputEnabled}>
+			{showCalibration && <AnalogCalibration 
+					analogConfig={analogConfig}
+					showCalibration={showCalibration}
+					hideCalibration={hideCalibration}
+					saveCalibrationPoints={console.log}/>}
+			
 				<div className="alert alert-info" role="alert">
 					{t('AddonsConfig:analog-warning')}
 				</div>
@@ -765,51 +678,7 @@ const Analog = ({ errors, handleChange, handleCheckbox, setFieldValue }: AddonPr
 									type="button"
 									className="btn btn-sm btn-outline-secondary ms-2"
 									disabled={Boolean(analogConfig.auto_calibrate)}
-									onClick={async () => {
-										try {
-											// Multi-step calibration process
-											const calibrationValues = await getCalibrationValues({
-													channels: analogConfig.analog_mux_channels,
-													selectPins: [analogConfig.analogSelectPin0, analogConfig.analogSelectPin1, analogConfig.analogSelectPin2, analogConfig.analogSelectPin3],
-													xChannel: analogConfig.analog_channel_x_1,
-													xAdcPin: analogConfig.analogAdc1PinX,
-													yChannel: analogConfig.analog_channel_y_1,
-													yAdcPin: analogConfig.analogAdc1PinY
-												});
-											
-											if (!calibrationValues) return;
-											
-
-											// Calculate center value from four points
-											const avgX = Math.round(calibrationValues.reduce((sum, val) => sum + val.x, 0) / 4);
-											const avgY = Math.round(calibrationValues.reduce((sum, val) => sum + val.y, 0) / 4);
-											
-											// Update joystick 1 center values
-											setConfig('joystickCenterX', avgX);
-											setConfig('joystickCenterY', avgY);
-											
-											console.log('Calibration completed:', {
-												values: calibrationValues,
-												finalCenter: { x: avgX, y: avgY }
-											});
-											
-											
-											// Show success message
-											alert(
-												t('AddonsConfig:analog-calibration-success-stick-1') + '\n\n' +
-												t('AddonsConfig:analog-calibration-data') + '\n' +
-												`• ${t('AddonsConfig:analog-calibration-direction-top-left')}: X=${calibrationValues[0].x}, Y=${calibrationValues[0].y}\n` +
-												`• ${t('AddonsConfig:analog-calibration-direction-top-right')}: X=${calibrationValues[1].x}, Y=${calibrationValues[1].y}\n` +
-												`• ${t('AddonsConfig:analog-calibration-direction-bottom-left')}: X=${calibrationValues[2].x}, Y=${calibrationValues[2].y}\n` +
-												`• ${t('AddonsConfig:analog-calibration-direction-bottom-right')}: X=${calibrationValues[3].x}, Y=${calibrationValues[3].y}\n\n` +
-												t('AddonsConfig:analog-calibration-final-center', { x: avgX, y: avgY }) + '\n\n' +
-												t('AddonsConfig:analog-calibration-save-notice')
-											);
-										} catch (err) {
-											console.error('Failed to calibrate joystick 1', err);
-											alert(t('AddonsConfig:analog-calibration-failed', { error: err instanceof Error ? err.message : String(err) }));
-										}
-									}}
+									onClick={startCalibration}
 								>
 									{t('AddonsConfig:analog-calibrate-stick-1-button')}
 								</button>
@@ -836,15 +705,6 @@ const Analog = ({ errors, handleChange, handleCheckbox, setFieldValue }: AddonPr
 								</div>
 							)}
 						</Row>
-						</Col>
-						<Col>
-						<Row>
-							<Button onClick={startVisualization}>Start</Button>
-							<Button onClick={stopVisualization}>Stop</Button>
-						</Row>
-
-						{AnalogVisualization()}
-
 						</Col>
 						</Row>
 					</Tab>
