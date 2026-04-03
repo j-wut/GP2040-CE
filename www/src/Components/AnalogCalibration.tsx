@@ -7,34 +7,40 @@ import './HECalibration.scss';
 
 import { BUTTON_ACTIONS } from '../Data/Pins';
 import invert from 'lodash/invert';
-import { ADC_MAX, AnalogInvertMode, AnalogOptions, JoystickPosition } from '../Data/Types';
+import { ADC_MAX, AnalogCalibrationPoint, AnalogInvertMode, AnalogOptions, AnalogPluginOptions } from '../Data/Types';
 import FormSelect from './FormSelect';
 import { number } from 'yup';
 import WebApi from '../Services/WebApi';
-import { result } from "lodash";
 
 type AnalogCalibrationProps = {
-	analogConfig: AnalogOptions;
+	pluginConfig: AnalogPluginOptions;
+	options: AnalogOptions;
 	showCalibration: boolean;
 	hideCalibration: () => void;
-	saveCalibrationPoints: (calibrationPoints: [[number, number],[number,number]][]) => void;
+	saveCalibration: (calibrationPoints: AnalogCalibrationPoint[], invertMode: AnalogInvertMode) => void;
 }
 
 
-
-interface AnalogCalibrationPoints {
-	[key: number]: [[number, number],[number,number]];
-}
+const INVERT_MODES = [
+	{ label: 'None', value: AnalogInvertMode.NONE},
+	{ label: 'X Axis', value: AnalogInvertMode.X_AXIS },
+	{ label: 'Y Axis', value: AnalogInvertMode.Y_AXIS },
+	{ label: 'X/Y Axis', value: AnalogInvertMode.XY_AXIS },
+];
 
 const AnalogCalibration = ({
-	analogConfig,
+	pluginConfig,
+	options,
 	showCalibration,
 	hideCalibration,
-	saveCalibrationPoints,
+	saveCalibration
 }: AnalogCalibrationProps) => {
 	const { t } = useTranslation('');
 
-	const [calibrationPoints, setCalibrationPoints] = useState<AnalogCalibrationPoints>({});
+	const [calibrationPoints, setCalibrationPoints] = useState<AnalogCalibrationPoint[]>([]);
+	const [invertMode, setInvertMode] = useState<AnalogInvertMode>(AnalogInvertMode.NONE);
+
+	
 	const [selectedPosition, setSelectedPosition] = useState(5);
 	const timerId = useRef<number>();
 	const [joystickPosition, setJoystickPosition] = useState({x:0,y:0});
@@ -51,14 +57,9 @@ const AnalogCalibration = ({
 		8: "Up",
 		9: "Up Right",
 	};
-	
-	const saveCalibration = () => {
-		saveCalibrationPoints(Object.values(calibrationPoints));
-		cancelCalibration();
-	}
 
 	const appendCalibrationPoint = () => {
-		let temporary_calibrations:AnalogCalibrationPoints = {...calibrationPoints};
+		let temporary_calibrations:AnalogCalibrationPoint[] = [...calibrationPoints];
 
 		let notchX: number;
 		let notchY: number;
@@ -77,11 +78,12 @@ const AnalogCalibration = ({
 			notchY = ADC_MAX/2;
 		}
 
-		temporary_calibrations[selectedPosition] = [[joystickPosition.x, joystickPosition.y],[notchX, notchY]];
+		temporary_calibrations[selectedPosition-1] = {source:joystickPosition, target: {x: notchX, y: notchY}};
 		setCalibrationPoints(temporary_calibrations);
 	}
 
 	useEffect(()=>{
+		setInvertMode(options.invert_mode);
 		startJoystickPolling();
 	},[])
 
@@ -89,6 +91,11 @@ const AnalogCalibration = ({
 		stopJoystickPolling();
 		hideCalibration();
 	}
+
+	useEffect(()=>{
+		stopJoystickPolling();
+		startJoystickPolling();
+	},[invertMode])
 
 	useEffect(()=>{
 
@@ -102,8 +109,7 @@ const AnalogCalibration = ({
         let totalWeight = 0.0;
 
 		Object.values(calibrationPoints).forEach((entry, i)=>{
-			const [[sourceX, sourceY], _] = entry
-			const distance = Math.sqrt((joystickPosition.x - sourceX)**2 + (joystickPosition.y - sourceY)**2)
+			const distance = Math.sqrt((joystickPosition.x - entry.source.x)**2 + (joystickPosition.y - entry.source.y)**2)
 			if (distance <= 0.0) {
                 weights[i] = 1e6; // Large weight for exact matches
             } else {
@@ -120,10 +126,9 @@ const AnalogCalibration = ({
         
 		Object.values(calibrationPoints).forEach((entry, i)=>{
 			const weight = weights[i];
-			const [[sourceX, sourceY], [targetX,targetY]] = entry
 
-			resultX += weight * (targetX + joystickPosition.x - sourceX)
-			resultY += weight * (targetY + joystickPosition.y - sourceY)
+			resultX += weight * (entry.target.x + joystickPosition.x - entry.source.x)
+			resultY += weight * (entry.target.y + joystickPosition.y - entry.source.y)
 		})
 
 		setCorrectedPosition({x: resultX, y:resultY})
@@ -132,17 +137,17 @@ const AnalogCalibration = ({
 
 	const readJoystickPosition = async () => {
 		let position = await WebApi.getJoystickPosition({
-			channels: analogConfig.analog_mux_channels,
-			selectPins: [analogConfig.analogSelectPin0, analogConfig.analogSelectPin1, analogConfig.analogSelectPin2, analogConfig.analogSelectPin3],
-			xChannel: analogConfig.analog_channel_x_1,
-			xAdcPin: analogConfig.analogAdc1PinX,
-			yChannel: analogConfig.analog_channel_y_1,
-			yAdcPin: analogConfig.analogAdc1PinY
+			channels: pluginConfig.analog_mux_channels,
+			selectPins: [pluginConfig.analogSelectPin0, pluginConfig.analogSelectPin1, pluginConfig.analogSelectPin2, pluginConfig.analogSelectPin3],
+			xChannel: options.channel_x,
+			xAdcPin: options.pin_x,
+			yChannel: options.channel_y,
+			yAdcPin: options.pin_y
 		});
-		if (analogConfig.analogAdc1Invert == AnalogInvertMode.XY_AXIS || analogConfig.analogAdc1Invert == AnalogInvertMode.X_AXIS) {
+		if (invertMode == AnalogInvertMode.XY_AXIS || invertMode == AnalogInvertMode.X_AXIS) {
 			position.x = ADC_MAX - position.x;
 		}
-		if (analogConfig.analogAdc1Invert == AnalogInvertMode.XY_AXIS || analogConfig.analogAdc1Invert == AnalogInvertMode.Y_AXIS) {
+		if (invertMode == AnalogInvertMode.XY_AXIS || invertMode == AnalogInvertMode.Y_AXIS) {
 			position.y = ADC_MAX - position.y;
 		}
 		setJoystickPosition(position);
@@ -163,7 +168,7 @@ const AnalogCalibration = ({
 	}
 
 	const AnalogVisualization = (): ReactElement => {
-		let directions = analogConfig.analog_directions_1;
+		let directions = options.snap_directions;
 		let pathD = directions.reverse().map((d) =>d3.arc().innerRadius(d.activation).outerRadius(d.release).startAngle(d.angle-d.snap_margin).endAngle(d.angle+d.snap_margin)());
 
 		return (
@@ -205,13 +210,35 @@ const AnalogCalibration = ({
 								</option>
 							))}
 						</FormSelect>
+						<FormSelect
+							label={t('AddonsConfig:analog-adc-1-invert-label')}
+							name="analogAdc1Invert"
+							className="form-select-sm"
+							groupClassName="col-sm-3 mb-3"
+							value={invertMode}
+							onChange={(e)=>{
+								console.log(e.target.value)
+								setInvertMode(+e.target.value)
+							}}
+						>
+							{INVERT_MODES.map((o, i) => (
+								<option
+									key={`button-analogAdc1Invert-option-${i}`}
+									value={o.value}
+								>
+									{o.label}
+								</option>
+							))}
+						</FormSelect>
 				</Modal.Body>
 				<Modal.Footer>
 					<Button
 						onClick={appendCalibrationPoint}>
 						Add Calibration Point
 					</Button>
-					<Button onClick={saveCalibration}>
+					<Button onClick={()=>{
+						saveCalibration(calibrationPoints ,invertMode)
+					}}>
 						Save
 					</Button>
 				</Modal.Footer>

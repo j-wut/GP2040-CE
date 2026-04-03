@@ -14,6 +14,7 @@ export interface JoystickPosition {
 }
 
 export enum AnalogMode {
+	DISABLED = 0,
     LEFT_ANALOG = 1,
     RIGHT_ANALOG = 2,
 }
@@ -32,60 +33,41 @@ export interface AnalogSnapDirection {
     release: number;
 }
 
+export interface AnalogCalibrationPoint {
+	source: JoystickPosition,
+	target: JoystickPosition
+}
+
 export interface AnalogOptions {
     [keyName: string]: any;
-	AnalogInputEnabled: boolean;
-	analogAdc1PinX: number;
-	analogAdc1PinY: number;
-	analogAdc1Mode: AnalogMode;
-	analogAdc1Invert: AnalogInvertMode;
-	analogAdc2PinX: number;
-	analogAdc2PinY: number;
-	analogAdc2Mode: AnalogMode;
-	analogAdc2Invert: AnalogInvertMode;
+	pin_x: number;
+	pin_y: number;
+	invert_mode: AnalogInvertMode;
+	analog_mode: AnalogMode;
 	forced_circularity: boolean;
-	forced_circularity2: boolean;
 	inner_deadzone: number;
-	inner_deadzone2: number;
-	outer_deadzone: number;
-	outer_deadzone2: number;
 	auto_calibrate: boolean;
-	auto_calibrate2: boolean;
-	joystickCenterX: number;
-	joystickCenterY: number;
-	joystickCenterX2: number;
-	joystickCenterY2: number;
+	calibration_points: AnalogCalibrationPoint[];
 	analog_smoothing: boolean;
-	analog_smoothing2: boolean;
 	smoothing_factor: number;
-	smoothing_factor2: number;
 	analog_error: number;
-	analog_error2: number;
 
+	use_mux: boolean;
+	channel_x: number;
+	channel_y: number;
+	linearity: number;
+	angle_snapping: boolean;
+	snap_directions: AnalogSnapDirection[];
+}
+export interface AnalogPluginOptions {
+    [keyName: string]: any;
+	AnalogInputEnabled: boolean;
+	
 	analog_mux_channels: number;
 	analogSelectPin0: number;
 	analogSelectPin1: number;
 	analogSelectPin2: number;
 	analogSelectPin3: number;
 
-	analog_mux_1: boolean;
-	analog_channel_x_1: number;
-	analog_channel_y_1: number;
-	analog_mux_2: boolean;
-	analog_channel_x_2: number;
-	analog_channel_y_2: number;
-
-    analog_linearity_1: boolean;
-    analog_linearity_margin_1: number;
-    analog_linearity_2: boolean;
-    analog_linearity_margin_2: number;
-
-    analog_angle_snapping_1: boolean;
-    analog_directions_1: AnalogSnapDirection[];
-    
-    analog_angle_snapping_2: boolean;
-    analog_directions_2: AnalogSnapDirection[];
-
-    analog_rotation_offset_1: number;
-    analog_rotation_offset_2: number;
+	analogOptions: AnalogOptions[];
 }
