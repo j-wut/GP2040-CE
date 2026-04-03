@@ -654,60 +654,56 @@ app.get('/api/getAddonsOptions', (req, res) => {
 	});
 });
 
-app.get('/api/getAnalogOptions', (req, res) => {
-	return res.send({
-		AnalogInputEnabled: false,
-		analogAdc1PinX: -1,
-		analogAdc1PinY: -1,
-		analogAdc1Mode: 1,
-		analogAdc1Invert: 0,
-		analogAdc2PinX: -1,
-		analogAdc2PinY: -1,
-		analogAdc2Mode: 2,
-		analogAdc2Invert: 0,
-		forced_circularity: false,
-		forced_circularity2: false,
-		inner_deadzone: 5,
-		inner_deadzone2: 5,
-		outer_deadzone: 95,
-		outer_deadzone2: 95,
-		auto_calibrate: false,
-		auto_calibrate2: false,
-		joystickCenterX: 0,
-		joystickCenterY: 0,
-		joystickCenterX2: 0,
-		joystickCenterY2: 0,
-		analog_smoothing: false,
-		analog_smoothing2: false,
-		smoothing_factor: 5,
-		smoothing_factor2: 5,
-		analog_error: 1,
-		analog_error2: 1,
+app.get('/api/getAnalogPlusSettings', (req, res) => {
+	return res.send(
+		{
+			AnalogPlusEnabled: true,
 
-		analog_mux_channels: 8,
-		analogSelectPin0: -1,
-		analogSelectPin1: -1,
-		analogSelectPin2: -1,
-		analogSelectPin3: -1,
-
-		analog_mux_1: false,
-		analog_channel_x_1: -1,
-		analog_channel_y_1: -1,
-
-		analog_mux_2: false,
-		analog_channel_x_2: -1,
-		analog_channel_y_2: -1,
-		analog_linearity_1: false,
-		analog_linearity_margin_1: 0,
-		analog_linearity_2: false,
-		analog_linearity_margin_2: 0,
-		analog_angle_snapping_1: false,
-		analog_directions_1: [],
-		analog_angle_snapping_2: false,
-		analog_directions_2: [],
-		analog_rotational_offset_1: 0,
-		analog_rotational_offset_2: 0
-	});
+			analog_mux_channels: 0,
+			analogSelectPin0: -1,
+			analogSelectPin1: -1,
+			analogSelectPin2: -1,
+			analogSelectPin3: -1,
+			
+			analogOptions: [{
+				analog_mode: AnalogMode.DISABLED,
+				pin_x: 0,
+				pin_y: 0,
+				invert_mode: AnalogInvertMode.NONE,
+				forced_circularity: false,
+				inner_deadzone: 0,
+				auto_calibrate: false,
+				calibration_points: [],
+				analog_smoothing: false,
+				smoothing_factor: 0,
+				analog_error: 0,
+				use_mux: false,
+				channel_x: 0,
+				channel_y: 0,
+				linearity: 0,
+				angle_snapping: false,
+				snap_directions: []
+			},{
+				analog_mode: AnalogMode.DISABLED,
+				pin_x: 0,
+				pin_y: 0,
+				invert_mode: AnalogInvertMode.NONE,
+				forced_circularity: false,
+				inner_deadzone: 0,
+				auto_calibrate: false,
+				calibration_points: [],
+				analog_smoothing: false,
+				smoothing_factor: 0,
+				analog_error: 0,
+				use_mux: false,
+				channel_x: 0,
+				channel_y: 0,
+				linearity: 0,
+				angle_snapping: false,
+				snap_directions: []
+			}]
+		}
+	);
 });
 
 app.post('/api/readJoystickPosition', (req, res) => {

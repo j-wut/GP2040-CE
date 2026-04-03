@@ -7,14 +7,14 @@ import './HECalibration.scss';
 
 import { BUTTON_ACTIONS } from '../Data/Pins';
 import invert from 'lodash/invert';
-import { ADC_MAX, AnalogCalibrationPoint, AnalogInvertMode, AnalogOptions, AnalogPluginOptions } from '../Data/Types';
+import { ADC_MAX, AnalogCalibrationPoint, AnalogInvertMode, AnalogPlusOptions, AnalogPlusPluginOptions } from '../Data/Types';
 import FormSelect from './FormSelect';
 import { number } from 'yup';
 import WebApi from '../Services/WebApi';
 
 type AnalogCalibrationProps = {
-	pluginConfig: AnalogPluginOptions;
-	options: AnalogOptions;
+	pluginConfig: AnalogPlusPluginOptions;
+	options: AnalogPlusOptions;
 	showCalibration: boolean;
 	hideCalibration: () => void;
 	saveCalibration: (calibrationPoints: AnalogCalibrationPoint[], invertMode: AnalogInvertMode) => void;
@@ -28,7 +28,7 @@ const INVERT_MODES = [
 	{ label: 'X/Y Axis', value: AnalogInvertMode.XY_AXIS },
 ];
 
-const AnalogCalibration = ({
+const AnalogPlusCalibration = ({
 	pluginConfig,
 	options,
 	showCalibration,
@@ -239,7 +239,7 @@ const AnalogCalibration = ({
 					<Button onClick={()=>{
 						saveCalibration(calibrationPoints ,invertMode)
 					}}>
-						Save
+						Finish Calibration
 					</Button>
 				</Modal.Footer>
 			</Modal>
@@ -247,4 +247,4 @@ const AnalogCalibration = ({
 	);
 };
 
-export default AnalogCalibration;
+export default AnalogPlusCalibration;
