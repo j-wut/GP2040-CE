@@ -7,14 +7,14 @@ import './HECalibration.scss';
 
 import { BUTTON_ACTIONS } from '../Data/Pins';
 import invert from 'lodash/invert';
-import { ADC_MAX, AnalogCalibrationPoint, AnalogInvertMode, AnalogPlusOptions, AnalogPlusPluginOptions } from '../Data/Types';
+import { ADC_MAX, AnalogCalibrationPoint, AnalogInvertMode, AnalogPlusConfig, AnalogPlusOptions } from '../Data/Types';
 import FormSelect from './FormSelect';
 import { number } from 'yup';
 import WebApi from '../Services/WebApi';
 
 type AnalogCalibrationProps = {
-	pluginConfig: AnalogPlusPluginOptions;
-	options: AnalogPlusOptions;
+	pluginConfig: AnalogPlusOptions;
+	options: AnalogPlusConfig;
 	showCalibration: boolean;
 	hideCalibration: () => void;
 	saveCalibration: (calibrationPoints: AnalogCalibrationPoint[], invertMode: AnalogInvertMode) => void;
@@ -137,8 +137,8 @@ const AnalogPlusCalibration = ({
 
 	const readJoystickPosition = async () => {
 		let position = await WebApi.getJoystickPosition({
-			channels: pluginConfig.analog_mux_channels,
-			selectPins: [pluginConfig.analogSelectPin0, pluginConfig.analogSelectPin1, pluginConfig.analogSelectPin2, pluginConfig.analogSelectPin3],
+			channels: pluginConfig.mux_channels,
+			selectPins: [pluginConfig.select_pins, pluginConfig.analogSelectPin1, pluginConfig.analogSelectPin2, pluginConfig.analogSelectPin3],
 			xChannel: options.channel_x,
 			xAdcPin: options.pin_x,
 			yChannel: options.channel_y,

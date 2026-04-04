@@ -1,4 +1,4 @@
-import { AnalogPlusOptions, AnalogPlusPluginOptions, GetJoystickPositionRequest, JoystickPosition, SetAnalogPlusOptionsRequest } from 'src/Data/Types';
+import { AnalogPlusConfig, AnalogPlusOptions, GetJoystickPositionRequest, JoystickPosition, SetAnalogPlusOptionsRequest } from 'src/Data/Types';
 import Http from './Http';
 import { hexToInt, rgbIntToHex } from './Utilities';
 
@@ -698,14 +698,14 @@ async function getJoystickPosition(request: GetJoystickPositionRequest): Promise
 		.catch(console.error);
 }
 
-async function setAnalogPlusOption(request: Partial<SetAnalogPlusOptionsRequest>): Promise<AnalogPlusOptions> {
+async function setAnalogPlusOption(request: Partial<SetAnalogPlusOptionsRequest>): Promise<AnalogPlusConfig> {
 	return Http.post(`${baseUrl}/api/setAnalogOptions`, request)
 		.then(res => res.data)
 		.catch(console.error);
 }
 
 
-async function getAnalogPlusSettings(): Promise<AnalogPlusPluginOptions> {
+async function getAnalogPlusSettings(): Promise<AnalogPlusOptions> {
 	return Http.get(`${baseUrl}/api/getAnalogPlusSettings`)
 		.then(res => res.data)
 		.catch(console.error);

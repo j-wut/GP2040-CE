@@ -10,6 +10,8 @@ import AnalogPinOptions from '../Components/AnalogPinOptions';
 import { AppContext } from '../Contexts/AppContext';
 import FormControl from '../Components/FormControl';
 import { AddonPropTypes } from '../Pages/AddonsConfigPage';
+import WebApi, { baseUrl } from '../Services/WebApi';
+import { json } from 'd3';
 
 const ANALOG_STICK_MODES = [
 	{ label: 'Left Analog', value: 1 },
@@ -414,22 +416,26 @@ const Analog = ({ values, errors, handleChange, handleCheckbox, setFieldValue }:
 													
 													
 													// Read current center value
-													console.log(`Fetching joystick 1 center for step ${stepNumber}...`);
-													const res = await fetch('/api/getJoystickCenter');
-													console.log('Response status:', res.status);
+													const res = await fetch(`${baseUrl}/api/getJoystickPosition`, {
+														method:"POST",
+														headers: {
+															'content-type': 'application/json',
+														},
+														body: JSON.stringify({
+															channels: 1,
+															selectPins: [],
+															xAdcPin: values.analogAdc1PinX,
+															yAdcPin: values.analogAdc1PinY,
+															xChannel: 0,
+															yChannel: 0
+														})
+													});
 													
 													if (!res.ok) {
 														throw new Error(`HTTP error! status: ${res.status}`);
 													}
 													
 													const data = await res.json();
-													console.log('Response data:', data);
-													
-													if (!data.success || data.error) {
-														alert(t('AddonsConfig:analog-calibration-failed', { error: data.error || 'Unknown error' }));
-														console.error('API Error:', data.error);
-														return;
-													}
 													
 													calibrationValues.push({
 														step: stepNumber,
@@ -438,7 +444,6 @@ const Analog = ({ values, errors, handleChange, handleCheckbox, setFieldValue }:
 														y: data.y || 0
 													});
 													
-													console.log(`Step ${stepNumber} completed:`, calibrationValues[i]);
 												}
 												
 
@@ -699,22 +704,26 @@ const Analog = ({ values, errors, handleChange, handleCheckbox, setFieldValue }:
 													
 													
 													// Read current center value
-													console.log(`Fetching joystick 2 center for step ${stepNumber}...`);
-													const res = await fetch('/api/getJoystickCenter2');
-													console.log('Response status:', res.status);
+													const res = await fetch(`${baseUrl}/api/getJoystickPosition`, {
+														method:"POST",
+														headers: {
+															'content-type': 'application/json',
+														},
+														body: JSON.stringify({
+															channels: 1,
+															selectPins: [],
+															xAdcPin: values.analogAdc1PinX,
+															yAdcPin: values.analogAdc1PinY,
+															xChannel: 0,
+															yChannel: 0
+														})
+													});
 													
 													if (!res.ok) {
 														throw new Error(`HTTP error! status: ${res.status}`);
 													}
 													
 													const data = await res.json();
-													console.log('Response data:', data);
-													
-													if (!data.success || data.error) {
-														alert(t('AddonsConfig:analog-calibration-failed', { error: data.error || 'Unknown error' }));
-														console.error('API Error:', data.error);
-														return;
-													}
 													
 													calibrationValues.push({
 														step: stepNumber,
@@ -723,7 +732,6 @@ const Analog = ({ values, errors, handleChange, handleCheckbox, setFieldValue }:
 														y: data.y || 0
 													});
 													
-													console.log(`Step ${stepNumber} completed:`, calibrationValues[i]);
 												}
 												
 

@@ -11,7 +11,7 @@ export interface GetJoystickPositionRequest {
 
 export interface SetAnalogPlusOptionsRequest {
 	index: number;
-	options: AnalogPlusOptions;
+	options: AnalogPlusConfig;
 }
 
 export interface JoystickPosition {
@@ -44,7 +44,7 @@ export interface AnalogCalibrationPoint {
 	target: JoystickPosition
 }
 
-export interface AnalogPlusOptions {
+export interface AnalogPlusConfig {
     [keyName: string]: any;
 	pin_x: number;
 	pin_y: number;
@@ -52,6 +52,7 @@ export interface AnalogPlusOptions {
 	analog_mode: AnalogMode;
 	forced_circularity: boolean;
 	inner_deadzone: number;
+	outer_deadzone: number;
 	auto_calibrate: boolean;
 	calibration_points: AnalogCalibrationPoint[];
 	analog_smoothing: boolean;
@@ -65,15 +66,12 @@ export interface AnalogPlusOptions {
 	angle_snapping: boolean;
 	snap_directions: AnalogSnapDirection[];
 }
-export interface AnalogPlusPluginOptions {
+export interface AnalogPlusOptions {
     [keyName: string]: any;
-	AnalogPlusEnabled: boolean;
+	enabled: boolean;
 	
-	analog_mux_channels: number;
-	analogSelectPin0: number;
-	analogSelectPin1: number;
-	analogSelectPin2: number;
-	analogSelectPin3: number;
+	mux_channels: number;
+	select_pins: number[];
 
-	analogOptions: AnalogPlusOptions[];
+	analog_configs: AnalogPlusConfig[];
 }

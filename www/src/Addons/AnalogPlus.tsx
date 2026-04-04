@@ -11,7 +11,7 @@ import AnalogPinOptions from '../Components/AnalogPinOptions';
 import { AppContext } from '../Contexts/AppContext';
 import FormControl from '../Components/FormControl';
 import { AddonPropTypes } from '../Pages/AddonsConfigPage';
-import { ADC_MAX, AnalogCalibrationPoint, AnalogInvertMode, AnalogMode, AnalogPlusOptions, AnalogPlusPluginOptions } from '../Data/Types';
+import { ADC_MAX, AnalogCalibrationPoint, AnalogInvertMode, AnalogMode, AnalogPlusConfig, AnalogPlusOptions } from '../Data/Types';
 import WebApi from '../Services/WebApi';
 import AnalogPlusCalibration from "../Components/AnalogPlusCalibration";
 
@@ -40,14 +40,11 @@ const ANALOG_ERROR_RATES = [
 	{ label: '15%', value: 821 },
 ];
 
-export const analogPlusDefaultState: AnalogPlusPluginOptions = {
-	AnalogPlusEnabled: false,
+export const analogPlusDefaultState: AnalogPlusOptions = {
+	enabled: false,
 
-	analog_mux_channels: 0,
-	analogSelectPin0: -1,
-	analogSelectPin1: -1,
-	analogSelectPin2: -1,
-	analogSelectPin3: -1,
+	mux_channels: 0,
+	select_pins: [],
 	
 	analogOptions: [{
 		analog_mode: AnalogMode.DISABLED,
@@ -89,33 +86,39 @@ export const analogPlusDefaultState: AnalogPlusPluginOptions = {
 };
 
 const AnalogPlus = ({  }: AddonPropTypes) => {
-	const [analogConfig , setAnalogConfig] = useState(analogPlusDefaultState);
+	const [analogPlusOptions , setAnalogPlusOptions] = useState(analogPlusDefaultState);
 	const { usedPins } = useContext(AppContext);
 	const { t } = useTranslation();
 
 	const saveCalibration = (index: number, calibrationPoints: AnalogCalibrationPoint[], invertMode: AnalogInvertMode) => {
 
-		analogConfig.analogOptions[index].calibration_points = calibrationPoints;
-		analogConfig.analogOptions[index].invert_mode = invertMode;
+		analogPlusOptions.analogOptions[index].calibration_points = calibrationPoints;
+		analogPlusOptions.analogOptions[index].invert_mode = invertMode;
 
-		setAnalogConfig(analogConfig);
+		setAnalogPlusOptions(analogPlusOptions);
 	}
 
-	const setAnalogOption = (index: number, fieldName: string , value: any) => {
-		const temp = {...analogConfig};
+	const setAnalogConfig = (index: number, fieldName: string , value: any) => {
+		const temp = {...analogPlusOptions};
 		temp.analogOptions[index][fieldName] = value;
-		setAnalogConfig(temp)
+		setAnalogPlusOptions(temp)
 	}
 
 	
-	const setPluginConfig = (fieldName: string , value: any) => {
-		const temp = {...analogConfig}
+	const setAddonField = (fieldName: string , value: any) => {
+		const temp = {...analogPlusOptions}
 		temp[fieldName] = value;
-		setAnalogConfig(temp)
+		setAnalogPlusOptions(temp)
 	}
 
-	const handleChange = (e:ChangeEvent<FormControlElement>) => setPluginConfig(e.target.name, e.target.value);
-	const handleCheckbox = (e:ChangeEvent<FormControlElement>, value: boolean) => setPluginConfig(e.target.id, value);
+	const handleChange = (e:ChangeEvent<FormControlElement>) => setAddonField(e.target.name, e.target.value);
+	const handleCheckbox = (e:ChangeEvent<FormControlElement>, value: boolean) => setAddonField(e.target.id, value);
+
+	const setSelectPin = (index: number, pin: number) => {
+		const temp = {...analogPlusOptions};
+		temp.select_pins[index] = pin;
+		setAnalogPlusOptions(temp);
+	}
 
 
 	useEffect(()=>{
@@ -143,11 +146,11 @@ const AnalogPlus = ({  }: AddonPropTypes) => {
 				target="_blank"
 				className="text-reset text-decoration-none"
 			>
-				Analog <b><i>PLUS</i></b>
+				Analog <em style={{fontSize:18}}>PLUS</em>
 			</a>
 		}
 		>
-			<div id="AnalogInputOptions" hidden={!analogConfig.AnalogPlusEnabled}>
+			<div id="AnalogInputOptions" hidden={!analogPlusOptions.enabled}>
 				<div className="alert alert-info" role="alert">
 					{t('AddonsConfig:analog-warning')}
 				</div>
@@ -160,10 +163,10 @@ const AnalogPlus = ({  }: AddonPropTypes) => {
 				<Row className="mt-2">
 					<FormSelect
 						label={t('HETrigger:multiplexer-channel-select')}
-						name="analog_mux_channels"
+						name="mux_channels"
 						className="form-select-sm"
 						groupClassName="col-sm-3 mb-3"
-						value={analogConfig.analog_mux_channels}
+						value={analogPlusOptions.mux_channels}
 						// error={errors.analog_mux_channels}
 						// isInvalid={Boolean(errors.analog_mux_channels)}
 						onChange={handleChange}
@@ -176,62 +179,23 @@ const AnalogPlus = ({  }: AddonPropTypes) => {
 					</FormSelect>
 				</Row>
 				<Row className="mb-3">
-					<FormControl
-						type="number"
-						label={t('HETrigger:select-pin-0')}
-						name="analogSelectPin0"
-						hidden={analogConfig.analog_mux_channels < 4}
-						className="form-select-sm"
-						groupClassName="col-sm-2 mb-3"
-						value={analogConfig.analogSelectPin0}
-						// error={errors.analogSelectPin0}
-						// isInvalid={Boolean(errors.analogSelectPin0)}
-						onChange={handleChange}
-						min={-1}
-						max={29}
-					/>
-					<FormControl
-						type="number"
-						label={t('HETrigger:select-pin-1')}
-						name="analogSelectPin1"
-						hidden={analogConfig.analog_mux_channels < 4}
-						className="form-select-sm"
-						groupClassName="col-sm-2 mb-3"
-						value={analogConfig.analogSelectPin1}
-						// error={errors.analogSelectPin1}
-						// isInvalid={Boolean(errors.analogSelectPin1)}
-						onChange={handleChange}
-						min={-1}
-						max={29}
-					/>
-					<FormControl
-						type="number"
-						label={t('HETrigger:select-pin-2')}
-						name="analogSelectPin2"
-						hidden={analogConfig.analog_mux_channels < 8}
-						className="form-select-sm"
-						groupClassName="col-sm-2 mb-3"
-						value={analogConfig.analogSelectPin2}
-						// error={errors.analogSelectPin2}
-						// isInvalid={Boolean(errors.analogSelectPin2)}
-						onChange={handleChange}
-						min={-1}
-						max={29}
-					/>
-					<FormControl
-						type="number"
-						label={t('HETrigger:select-pin-3')}
-						name="analogSelectPin3"
-						hidden={analogConfig.analog_mux_channels < 16}
-						className="form-select-sm"
-						groupClassName="col-sm-2 mb-3"
-						value={analogConfig.analogSelectPin3}
-						// error={errors.analogSelectPin3}
-						// isInvalid={Boolean(errors.analogSelectPin3)}
-						onChange={handleChange}
-						min={-1}
-						max={29}
-					/>
+					{analogPlusOptions.mux_channels > 1 && [...Array(Math.log2(analogPlusOptions.mux_channels)).keys()].map((_,i)=> {
+							return <FormControl
+								type="number"
+								label={`Select Pin ${i+1}`}
+								name={`analogSelectPin${i}`}
+								className="form-select-sm"
+								groupClassName="col-sm-2 mb-3"
+								value={analogPlusOptions.select_pins?.length ? analogPlusOptions.select_pins[i] : -1}
+								// error={errors.analogSelectPin1}
+								// isInvalid={Boolean(errors.analogSelectPin1)}
+								onChange={(e)=>{
+									setSelectPin(i, +e.currentTarget.value)}}
+								min={-1}
+								max={29}
+							/>
+						})
+					}
 				</Row>
 
 				<Tabs
@@ -241,9 +205,9 @@ const AnalogPlus = ({  }: AddonPropTypes) => {
 					fill
 				>
 					{
-						analogConfig.analogOptions.map((options, index)=> {
-							const handleChange = (e:ChangeEvent<FormControlElement>) => setAnalogOption(index, e.target.name, e.target.value);
-							const handleCheckbox = (e:ChangeEvent<FormControlElement>, value: boolean) => setAnalogOption(index, e.target.id, value);
+						analogPlusOptions.analog_configs.map((config, index)=> {
+							const handleChange = (e:ChangeEvent<FormControlElement>) => setAnalogConfig(index, e.target.name, e.target.value);
+							const handleCheckbox = (e:ChangeEvent<FormControlElement>, value: boolean) => setAnalogConfig(index, e.target.id, value);
 							const [showCalibration, setShowCalibration] = useState(false);
 
 							return (
@@ -253,8 +217,8 @@ const AnalogPlus = ({  }: AddonPropTypes) => {
 							{showCalibration && <>
 							<AnalogPlusCalibration 
 									showCalibration={showCalibration}
-									pluginConfig={analogConfig}
-									options={options}
+									pluginConfig={analogPlusOptions}
+									options={config}
 									hideCalibration={() => setShowCalibration(false)}
 									saveCalibration={(calibrationPoints: AnalogCalibrationPoint[], invertMode: AnalogInvertMode) => saveCalibration(index, calibrationPoints, invertMode)}/>
 									</>}
@@ -268,25 +232,25 @@ const AnalogPlus = ({  }: AddonPropTypes) => {
 									id="use_mux"
 									className="col-sm-3 ms-3"
 									isInvalid={false}
-									checked={Boolean(options.use_mux)}
+									checked={Boolean(config.use_mux)}
 									onChange={(e) => {
-										handleCheckbox(e, !options.use_mux)
+										handleCheckbox(e, !config.use_mux)
 									}}
 								/>
 							</Row>
-							{options.use_mux && <Row className="mb-3">
+							{config.use_mux && <Row className="mb-3">
 								<FormControl
 									type="number"
 									label={"x channel"}
 									name="channel_x"
 									className="form-select-sm"
 									groupClassName="col-sm-2 mb-3"
-									value={options.channel_x}
+									value={config.channel_x}
 									// error={errors.analog_channel_x_1}
 									// isInvalid={Boolean(errors.analog_channel_x_1)}
 									onChange={handleChange}
 									min={0}
-									max={analogConfig.analog_mux_channels - 1}
+									max={analogPlusOptions.mux_channels - 1}
 								/>
 								<FormControl
 									type="number"
@@ -294,12 +258,12 @@ const AnalogPlus = ({  }: AddonPropTypes) => {
 									name="channel_y"
 									className="form-select-sm"
 									groupClassName="col-sm-2 mb-3"
-									value={options.channel_y}
+									value={config.channel_y}
 									// error={errors.analog_channel_y_1}
 									// isInvalid={Boolean(errors.analog_channel_y_1)}
 									onChange={handleChange}
 									min={0}
-									max={analogConfig.analog_mux_channels - 1}
+									max={analogPlusOptions.mux_channels - 1}
 								/>
 							</Row>}
 							<Row className="mb-3">
@@ -308,7 +272,7 @@ const AnalogPlus = ({  }: AddonPropTypes) => {
 									name="pin_x"
 									className="form-select-sm"
 									groupClassName="col-sm-3 mb-3"
-									value={options.pin_x}
+									value={config.pin_x}
 									// error={errors.analogAdc1PinX}
 									// isInvalid={Boolean(errors.analogAdc1PinX)}
 									onChange={handleChange}
@@ -320,7 +284,7 @@ const AnalogPlus = ({  }: AddonPropTypes) => {
 									name="pin_y"
 									className="form-select-sm"
 									groupClassName="col-sm-3 mb-3"
-									value={options.pin_y}
+									value={config.pin_y}
 									// error={errors.analogAdc1PinY}
 									// isInvalid={Boolean(errors.analogAdc1PinY)}
 									onChange={handleChange}
@@ -333,7 +297,7 @@ const AnalogPlus = ({  }: AddonPropTypes) => {
 										name="analog_mode"
 										className="form-select-sm"
 										groupClassName="col-sm-3 mb-3"
-										value={options.analog_mode}
+										value={config.analog_mode}
 										// error={errors.analogAdc1Mode}
 										// isInvalid={Boolean(errors.analogAdc1Mode)}
 										onChange={handleChange}
@@ -352,7 +316,7 @@ const AnalogPlus = ({  }: AddonPropTypes) => {
 										name="inner_deadzone"
 										className="form-control-sm"
 										groupClassName="col-sm-3 mb-3"
-										value={options.inner_deadzone}
+										value={config.inner_deadzone}
 										// error={errors.inner_deadzone}
 										// isInvalid={Boolean(errors.inner_deadzone)}
 										onChange={handleChange}
@@ -365,7 +329,7 @@ const AnalogPlus = ({  }: AddonPropTypes) => {
 										name="outer_deadzone"
 										className="form-control-sm"
 										groupClassName="col-sm-3 mb-3"
-										value={options.outer_deadzone}
+										value={config.outer_deadzone}
 										// error={errors.outer_deadzone}
 										// isInvalid={Boolean(errors.outer_deadzone)}
 										onChange={handleChange}
@@ -380,19 +344,19 @@ const AnalogPlus = ({  }: AddonPropTypes) => {
 										id="analog_smoothing"
 										className="col-sm-3 ms-3"
 										isInvalid={false}
-										checked={options.analog_smoothing}
+										checked={config.analog_smoothing}
 										onChange={(e) => {
-											handleCheckbox(e, !options.analog_smoothing)
+											handleCheckbox(e, !config.analog_smoothing)
 										}}
 									/>
 									<FormControl
-										hidden={!analogConfig.analog_smoothing}
+										hidden={!analogPlusOptions.analog_smoothing}
 										type="number"
 										label={t('AddonsConfig:smoothing-factor')}
 										name="smoothing_factor"
 										className="form-control-sm"
 										groupClassName="col-sm-3 mb-3"
-										value={options.smoothing_factor}
+										value={config.smoothing_factor}
 										// error={errors.smoothing_factor}
 										// isInvalid={Boolean(errors.smoothing_factor)}
 										onChange={handleChange}
@@ -407,18 +371,18 @@ const AnalogPlus = ({  }: AddonPropTypes) => {
 										id="forced_circularity"
 										className="col-sm-3 ms-3"
 										isInvalid={false}
-										checked={options.forced_circularity}
+										checked={config.forced_circularity}
 										onChange={(e) => {
-											handleCheckbox(e, !options.forced_circularity);
+											handleCheckbox(e, !config.forced_circularity);
 										}}
 									/>
 									<FormSelect
-										hidden={!analogConfig.forced_circularity}
+										hidden={!analogPlusOptions.forced_circularity}
 										label={t('AddonsConfig:analog-error-label')}
 										name="analog_error"
 										className="form-control-sm"
 										groupClassName="col-sm-3 mb-3"
-										value={options.analog_error}
+										value={config.analog_error}
 										onChange={handleChange}
 									>
 										{ANALOG_ERROR_RATES.map((o, i) => (
@@ -435,28 +399,28 @@ const AnalogPlus = ({  }: AddonPropTypes) => {
 										id="auto_calibrate"
 										className="col-sm-3 ms-3"
 										isInvalid={false}
-										checked={options.auto_calibrate}
+										checked={config.auto_calibrate}
 										onChange={(e)=>{
-											handleCheckbox(e, !options.auto_calibrate)
+											handleCheckbox(e, !config.auto_calibrate)
 										}}
 									/>
 									<button
 										type="button"
 										className="btn btn-sm btn-outline-secondary ms-2"
-										disabled={Boolean(options.auto_calibrate)}
+										disabled={Boolean(config.auto_calibrate)}
 										onClick={()=>setShowCalibration(true)}
 									>
 										{t('AddonsConfig:analog-calibrate-stick-1-button')}
 									</button>
 								</div>
-								{Boolean(options.auto_calibrate) && (
+								{Boolean(config.auto_calibrate) && (
 									<div className="alert alert-info mt-2 mb-3">
 										<small>
 											<strong>{t('AddonsConfig:analog-auto-calibration-enabled-stick-1')}：</strong> {t('AddonsConfig:analog-calibration-auto-mode-instruction', { stick: '1' })}
 										</small>
 									</div>
 								)}
-								{!Boolean(options.auto_calibrate) && (
+								{!Boolean(config.auto_calibrate) && (
 									<div className="alert alert-warning mt-2 mb-3">
 										<small>
 											<strong>{t('AddonsConfig:analog-manual-calibration-mode-stick-1')}：</strong> 
@@ -478,12 +442,12 @@ const AnalogPlus = ({  }: AddonPropTypes) => {
 			<FormCheck
 				label={t('Common:switch-enabled')}
 				type="switch"
-				id="AnalogPlusEnabled"
+				id="enabled"
 				reverse
 				isInvalid={false}
-				checked={Boolean(analogConfig.AnalogPlusEnabled)}
+				checked={Boolean(analogPlusOptions.enabled)}
 				onChange={(e) => {
-					handleCheckbox(e, !analogConfig.AnalogPlusEnabled)
+					handleCheckbox(e, !analogPlusOptions.enabled)
 				}}
 			/>
 		</Section>

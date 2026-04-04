@@ -17,6 +17,9 @@ const { pico: picoController } = JSON.parse(
 	readFileSync(path.resolve(__dirname, '../src/Data/Controllers.json'), 'utf8'),
 );
 
+
+const ADC_MAX = 4095
+
 // Structure pin mappings to include masks and profile label
 const createPinMappings = ({ profileLabel = 'Profile', enabled = true }) => {
 	let pinMappings = { profileLabel, enabled };
@@ -475,78 +478,6 @@ app.get('/api/getAddonsOptions', (req, res) => {
 		smoothing_factor2: 5,
 		analog_error: 1000,
 		analog_error2: 1000,
-		"analog_mux_channels": 8,
-    "analogSelectPin0": 21,
-    "analogSelectPin1": 22,
-    "analogSelectPin2": 20,
-    "analogSelectPin3": 0,
-    "analog_mux_1": 1,
-    "analog_channel_x_1": 0,
-    "analog_channel_y_1": 2,
-    "analog_mux_2": 0,
-    "analog_channel_x_2": 0,
-    "analog_channel_y_2": 1,
-    "analog_linearity_1": 1,
-    "analog_linearity_margin_1": 0.08726646,
-    "analog_linearity_2": 0,
-    "analog_linearity_margin_2": 0,
-    "analog_angle_snapping_1": 1,
-    "analog_direction_count_1": 8,
-    "analog_directions_1": [
-        {
-            "angle": 0,
-            "snap_margin": 0.6981317007977318,
-            "activation": 5,
-            "release": 95
-        },
-        {
-            "angle": 0.785398185,
-            "snap_margin": 0.08726646259971647,
-            "activation": 5,
-            "release": 95
-        },
-        {
-            "angle": 1.570796371,
-            "snap_margin": 0.6981317007977318,
-            "activation": 5,
-            "release": 95
-        },
-        {
-            "angle": 2.356194496,
-            "snap_margin": 0.08726646259971647,
-            "activation": 5,
-            "release": 95
-        },
-        {
-            "angle": 3.141592741,
-            "snap_margin": 0.6981317007977318,
-            "activation": 5,
-            "release": 95
-        },
-        {
-            "angle": 3.926990747,
-            "snap_margin": 0.08726646259971647,
-            "activation": 5,
-            "release": 95
-        },
-        {
-            "angle": 4.712388992,
-            "snap_margin": 0.6981317007977318,
-            "activation": 5,
-            "release": 95
-        },
-        {
-            "angle": 5.497786999,
-            "snap_margin": 0.08726646259971647,
-            "activation": 5,
-            "release": 95
-        }
-    ],
-    "analog_angle_snapping_2": 0,
-    "analog_direction_count_2": 0,
-    "analog_directions_2": [],
-    "analog_rotation_offset_1": 0.015669628,
-    "analog_rotation_offset_2": 0,
 		bootselButtonMap: 0,
 		buzzerPin: -1,
 		buzzerEnablePin: -1,
@@ -651,6 +582,14 @@ app.get('/api/getAddonsOptions', (req, res) => {
 		TG16padAddonEnabled: 1,
 		HETriggerEnabled: 1,
 		usedPins: Object.values(picoController),
+	});
+});
+
+app.post('/api/getJoystickPosition', (req, res) => {
+	const ms = new Date().getTime()/1000;
+	return res.status(200).send({
+		x: ADC_MAX/2*Math.cos(ms) + ADC_MAX/2,
+		y: ADC_MAX/2*Math.sin(ms) + ADC_MAX/2
 	});
 });
 
