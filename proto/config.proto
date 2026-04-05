@@ -395,6 +395,55 @@ message OnBoardLedOptions
     optional bool enabled = 2;
 }
 
+message AnalogPlusOptions
+{
+    optional bool enabled = 1;
+    
+    optional int32 mux_channels = 2;
+    optional int32 select_pins = 3 [(nanopb).max_count = 4];
+
+    optional AnalogPlusConfig analog_configs = 4 [(nanopb).max_count = 2];
+}
+
+message AnalogPlusConfig
+{    
+	optional AnalogMode analog_mode = 1;
+	optional bool use_mux = 2;
+	optional int32 channel_x = 3;
+    optional int32 channel_y = 4;
+	optional int32 pin_x = 5;
+	optional int32 pin_y = 6;
+    optional InvertMode invert_mode = 7;
+    optional bool forced_circularity = 8;
+    optional float inner_deadzone = 9;
+    optional float outer_deadzone = 10;
+    optional bool auto_calibrate = 11;
+    optional AnalogCalibrationPoint calibration_points = 12 [(nanopb).max_count = 13];
+    optional bool analog_smoothing = 13;
+    optional float smoothing_factor = 14;
+    optional uint32 analog_error = 15;
+    optional float linearity = 16;
+    optional AnalogSnapDirection snap_directions = 17 [(nanopb).max_count = 16];
+}
+
+message AnalogCalibrationPoint
+{
+    optional bool enabled = 1;
+    optional uint32 source_x = 2;
+    optional uint32 source_y = 3;
+    optional uint32 target_x = 4;
+    optional uint32 target_y = 5;
+}
+
+message AnalogSnapDirection
+{
+    optional bool enabled = 1;
+    optional float angle = 2;
+    optional float snap_margin = 3;
+    optional float activation = 4;
+    optional float release = 5;
+}
+
 message AnalogOptions
 {
     optional bool enabled = 1;
@@ -965,6 +1014,7 @@ message AddonOptions
     optional GamepadUSBHostOptions gamepadUSBHostOptions = 28;
     optional TG16Options tg16Options = 29;
     optional HETriggerOptions heTriggerOptions = 30;
+    optional AnalogPlusOptions analogPlusOptions = 31;
 }
 
 message MigrationHistory
