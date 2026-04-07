@@ -1,6 +1,7 @@
 #ifndef _Analog_Plus_H
 #define _Analog_Plus_H
 
+#include "config.pb.h"
 #include "gpaddon.h"
 #include "GamepadEnums.h"
 #include "BoardConfig.h"
@@ -287,7 +288,7 @@ private:
 
     AnalogState joystick_state[ANALOG_PLUS_COUNT];
     int selectPins;
-    AnalogPlusOptions& options;
+    AnalogPlusOptions* options;
 };
 
 #endif  // _Analog_H_
