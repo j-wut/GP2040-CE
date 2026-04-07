@@ -419,12 +419,11 @@ message AnalogPlusConfig
     optional float outer_deadzone = 10;
     optional bool auto_calibrate = 11;
     repeated AnalogCalibrationPoint calibration_points = 12 [(nanopb).max_count = 13];
-    optional bool analog_smoothing = 13;
-    optional float smoothing_factor = 14;
-    optional uint32 analog_error = 15;
-    optional float linearity = 16;
-    optional bool analog_snapping = 17;
-    repeated AnalogSnapDirection snap_directions = 18 [(nanopb).max_count = 16];
+    optional float smoothing_factor = 13;
+    optional uint32 analog_error = 14;
+    optional float linearity = 15;
+    optional bool analog_snapping = 16;
+    repeated AnalogSnapDirection snap_directions = 17 [(nanopb).max_count = 16];
 }
 
 message AnalogCalibrationPoint

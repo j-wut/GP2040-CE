@@ -119,7 +119,7 @@ void AnalogPlusInput::process() {
                 joystick_state[i].y_reading = ADC_MAX - joystick_state[i].y_reading;
             }
 
-            if (options.analog_configs[i].analog_smoothing) {
+            if (!!options.analog_configs[i].smoothing_factor) {
                 joystick_state[i].x_reading = emaCalculation(i, joystick_state[i].x_reading, joystick_state[i].x_ema);
                 joystick_state[i].x_ema = joystick_state[i].x_reading;
                 

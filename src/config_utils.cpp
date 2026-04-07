@@ -11,6 +11,7 @@
 #include "GamepadConfig.h"
 #include "version.h"
 #include "addons/analog.h"
+#include "addons/analog_plus.h"
 #include "addons/board_led.h"
 #include "addons/bootsel_button.h"
 #include "addons/buzzerspeaker.h"
@@ -79,6 +80,27 @@
         memcpy(parent.property.bytes, byteArray, std::min(sizeof(byteArray), sizeof(parent.property.bytes))); \
         parent.PREPROCESSOR_JOIN(has_, property) = true; \
     } \
+
+#define INIT_UNSET_PROPERTY_REPEATED(parent, property, value, count) \
+    if (!parent.PREPROCESSOR_JOIN(property, _count)) \
+    { \
+        for (int i = 0; i < count; i++) \
+        { \
+            parent.property[i] = value; \
+        } \
+        parent.PREPROCESSOR_JOIN(property, _count) = count; \
+    } \
+
+#define INIT_UNSET_PROPERTY_ARRAY(parent, property, values, count) \
+    if (!parent.PREPROCESSOR_JOIN(property, _count)) \
+    { \
+        for (int i = 0; i < count; i++) \
+        { \
+            parent.property[i] = values[i]; \
+        } \
+        parent.PREPROCESSOR_JOIN(property, _count) = count; \
+    } \
+
 
 #ifndef DEFAULT_INPUT_MODE
     #define DEFAULT_INPUT_MODE INPUT_MODE_XINPUT
@@ -669,6 +691,65 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     // tell nanopb to persist 16 directions worth of data
     config.addonOptions.analogOptions.analog_directions_1_count = ANALOG_MAX_DIRECTIONS;
     config.addonOptions.analogOptions.analog_directions_2_count = ANALOG_MAX_DIRECTIONS;
+
+    // addonOptions.analogPlusOptions
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions, enabled, !!ANALOG_PLUS_ENABLED);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions, mux_channels, ANALOG_PLUS_CHANNELS_DEFAULT);
+
+    int32_t analogPlusDefaultSelectPins[ANALOG_PLUS_SELECT_PIN_MAX] = {ANALOG_PLUS_SELECT_PIN_0, ANALOG_PLUS_SELECT_PIN_1, ANALOG_PLUS_SELECT_PIN_2, ANALOG_PLUS_SELECT_PIN_3};
+    INIT_UNSET_PROPERTY_ARRAY(config.addonOptions.analogPlusOptions, select_pins, analogPlusDefaultSelectPins, ANALOG_PLUS_SELECT_PIN_MAX);
+
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0], analog_mode, ANALOG_PLUS_MODE_1);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0], use_mux, !!ANALOG_PLUS_USE_MUX_1);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0], channel_x, ANALOG_PLUS_CHANNEL_X_1);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0], channel_y, ANALOG_PLUS_CHANNEL_Y_1);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0], pin_x, ANALOG_PLUS_PIN_X_1);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0], pin_y, ANALOG_PLUS_PIN_Y_1);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0], invert_mode, ANALOG_PLUS_INVERT_MODE_1);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0], forced_circularity, ANALOG_PLUS_FORCED_CIRCULARITY_1);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0], inner_deadzone, ANALOG_PLUS_INNER_DEADZONE_1);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0], outer_deadzone, ANALOG_PLUS_OUTER_DEADZONE_1);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0], auto_calibrate, !!ANALOG_PLUS_AUTO_CALIBRATE_1);
+    for (int j=0; j<ANALOG_PLUS_CALIBRATION_COUNT_MAX; j++) {
+        INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0].calibration_points[j], enabled, false);
+        INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0].calibration_points[j], source_x, 0.0f);
+        INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0].calibration_points[j], source_y, 0.0f);
+        INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0].calibration_points[j], target_x, 0.0f);
+        INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0].calibration_points[j], target_y, 0.0f);
+    }
+    config.addonOptions.analogPlusOptions.analog_configs[0].calibration_points_count = ANALOG_PLUS_CALIBRATION_COUNT_MAX;
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0], smoothing_factor, ANALOG_PLUS_SMOOTHING_FACTOR_1);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0], analog_error, ANALOG_PLUS_ANALOG_ERROR_1);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0], linearity, ANALOG_PLUS_LINEARITY_1);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0], analog_snapping, ANALOG_PLUS_ANALOG_SNAPPING_1);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0], auto_calibrate, ANALOG_PLUS_AUTO_CALIBRATE_1);
+
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1], analog_mode, ANALOG_PLUS_MODE_2);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1], use_mux, !!ANALOG_PLUS_USE_MUX_2);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1], channel_x, ANALOG_PLUS_CHANNEL_X_2);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1], channel_y, ANALOG_PLUS_CHANNEL_Y_2);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1], pin_x, ANALOG_PLUS_PIN_X_2);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1], pin_y, ANALOG_PLUS_PIN_Y_2);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1], invert_mode, ANALOG_PLUS_INVERT_MODE_2);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1], forced_circularity, ANALOG_PLUS_FORCED_CIRCULARITY_2);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1], inner_deadzone, ANALOG_PLUS_INNER_DEADZONE_2);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1], outer_deadzone, ANALOG_PLUS_OUTER_DEADZONE_2);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1], auto_calibrate, !!ANALOG_PLUS_AUTO_CALIBRATE_2);
+    for (int j=0; j<ANALOG_PLUS_CALIBRATION_COUNT_MAX; j++) {
+        INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1].calibration_points[j], enabled, false);
+        INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1].calibration_points[j], source_x, 0.0f);
+        INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1].calibration_points[j], source_y, 0.0f);
+        INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1].calibration_points[j], target_x, 0.0f);
+        INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1].calibration_points[j], target_y, 0.0f);
+    }
+    config.addonOptions.analogPlusOptions.analog_configs[0].calibration_points_count = ANALOG_PLUS_CALIBRATION_COUNT_MAX;
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1], smoothing_factor, ANALOG_PLUS_SMOOTHING_FACTOR_2);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1], analog_error, ANALOG_PLUS_ANALOG_ERROR_2);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1], linearity, ANALOG_PLUS_LINEARITY_2);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1], analog_snapping, ANALOG_PLUS_ANALOG_SNAPPING_2);
+    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1], auto_calibrate, ANALOG_PLUS_AUTO_CALIBRATE_2);
+
+    config.addonOptions.analogPlusOptions.analog_configs_count = 2;
 
     // addonOptions.turboOptions
     INIT_UNSET_PROPERTY(config.addonOptions.turboOptions, enabled, !!TURBO_ENABLED);
