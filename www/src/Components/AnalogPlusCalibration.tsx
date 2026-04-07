@@ -1,15 +1,12 @@
 import * as d3 from "d3";
-import React, { useEffect, useState, useRef, ReactElement } from 'react';
-import { Button, Modal, Row, Col, ProgressBar, Form, Spinner, Dropdown } from 'react-bootstrap';
+import { useEffect, useState, useRef, ReactElement } from 'react';
+import { Button, Modal, Row, Col } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 
 import './HECalibration.scss';
 
-import { BUTTON_ACTIONS } from '../Data/Pins';
-import invert from 'lodash/invert';
 import { ADC_MAX, AnalogCalibrationPoint, AnalogInvertMode, AnalogPlusConfig, AnalogPlusOptions } from '../Data/Types';
 import FormSelect from './FormSelect';
-import { number } from 'yup';
 import WebApi from '../Services/WebApi';
 
 type AnalogCalibrationProps = {
@@ -149,7 +146,7 @@ const AnalogPlusCalibration = ({
 	const readJoystickPosition = async () => {
 		let position = await WebApi.getJoystickPosition({
 			channels: pluginOptions.mux_channels,
-			selectPins: [pluginOptions.select_pins, pluginOptions.analogSelectPin1, pluginOptions.analogSelectPin2, pluginOptions.analogSelectPin3],
+			selectPins: pluginOptions.select_pins,
 			xChannel: config.channel_x,
 			xAdcPin: config.pin_x,
 			yChannel: config.channel_y,
