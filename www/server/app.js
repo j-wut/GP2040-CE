@@ -593,24 +593,28 @@ app.post('/api/getJoystickPosition', (req, res) => {
 	});
 });
 
+app.post('/api/setAnalogPlusSettings', (req, res) => {
+	return res.send(
+		req.body
+	);
+});
+
 app.get('/api/getAnalogPlusSettings', (req, res) => {
 	return res.send(
 		{
-			AnalogPlusEnabled: true,
+			enabled: true,
 
-			analog_mux_channels: 0,
-			analogSelectPin0: -1,
-			analogSelectPin1: -1,
-			analogSelectPin2: -1,
-			analogSelectPin3: -1,
+			mux_channels: 0,
+			select_pins: [],
 			
-			analogOptions: [{
-				analog_mode: AnalogMode.DISABLED,
+			analog_configs: [{
+				analog_mode: 1,
 				pin_x: 0,
 				pin_y: 0,
-				invert_mode: AnalogInvertMode.NONE,
+				invert_mode: 0,
 				forced_circularity: false,
 				inner_deadzone: 0,
+				outer_deadzone: 95,
 				auto_calibrate: false,
 				calibration_points: [],
 				analog_smoothing: false,
@@ -623,12 +627,13 @@ app.get('/api/getAnalogPlusSettings', (req, res) => {
 				angle_snapping: false,
 				snap_directions: []
 			},{
-				analog_mode: AnalogMode.DISABLED,
+				analog_mode: 2,
 				pin_x: 0,
 				pin_y: 0,
-				invert_mode: AnalogInvertMode.NONE,
+				invert_mode: 0,
 				forced_circularity: false,
 				inner_deadzone: 0,
+				outer_deadzone: 95,
 				auto_calibrate: false,
 				calibration_points: [],
 				analog_smoothing: false,
@@ -640,7 +645,7 @@ app.get('/api/getAnalogPlusSettings', (req, res) => {
 				linearity: 0,
 				angle_snapping: false,
 				snap_directions: []
-			}]
+			}],
 		}
 	);
 });

@@ -698,8 +698,8 @@ async function getJoystickPosition(request: GetJoystickPositionRequest): Promise
 		.catch(console.error);
 }
 
-async function setAnalogPlusOption(request: Partial<SetAnalogPlusOptionsRequest>): Promise<AnalogPlusConfig> {
-	return Http.post(`${baseUrl}/api/setAnalogOptions`, request)
+async function setAnalogPlusOptions(request: Partial<AnalogPlusOptions>): Promise<AnalogPlusOptions> {
+	return Http.post(`${baseUrl}/api/setAnalogPlusOptions`, request)
 		.then(res => res.data)
 		.catch(console.error);
 }
@@ -764,7 +764,7 @@ export default {
 	getHeldPins,
 	abortGetHeldPins,
 	getJoystickPosition,
-	setAnalogPlusOption,
+	setAnalogPlusOptions,
 	getAnalogPlusSettings,
 	reboot,
 };

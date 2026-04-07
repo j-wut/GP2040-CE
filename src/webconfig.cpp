@@ -36,6 +36,7 @@
 #include "lwip/mem.h"
 #include "addons/input_macro.h"
 #include "addons/analog.h"
+#include "addons/analog_plus.h"
 
 #define PATH_CGI_ACTION "/cgi/action"
 
@@ -2677,92 +2678,75 @@ std:: string getJoystickPosition() {
     return serialize_json(res);
 }
 
-std::string setAnalogOptions()
+std::string setAnalogPlusOptions()
 {
     DynamicJsonDocument doc = get_post_data();
 
-    AnalogOptions& analogOptions = Storage::getInstance().getAddonOptions().analogOptions;
-    docToPin(analogOptions.analogAdc1PinX, doc, "analogAdc1PinX");
-    docToPin(analogOptions.analogAdc1PinY, doc, "analogAdc1PinY");
-    docToValue(analogOptions.analogAdc1Mode, doc, "analogAdc1Mode");
-    docToValue(analogOptions.analogAdc1Invert, doc, "analogAdc1Invert");
-    docToPin(analogOptions.analogAdc2PinX, doc, "analogAdc2PinX");
-    docToPin(analogOptions.analogAdc2PinY, doc, "analogAdc2PinY");
-    docToValue(analogOptions.analogAdc2Mode, doc, "analogAdc2Mode");
-    docToValue(analogOptions.analogAdc2Invert, doc, "analogAdc2Invert");
-    docToValue(analogOptions.forced_circularity, doc, "forced_circularity");
-    docToValue(analogOptions.forced_circularity2, doc, "forced_circularity2");
-    docToValue(analogOptions.inner_deadzone, doc, "inner_deadzone");
-    docToValue(analogOptions.inner_deadzone2, doc, "inner_deadzone2");
-    docToValue(analogOptions.outer_deadzone, doc, "outer_deadzone");
-    docToValue(analogOptions.outer_deadzone2, doc, "outer_deadzone2");
-    docToValue(analogOptions.auto_calibrate, doc, "auto_calibrate");
-    docToValue(analogOptions.auto_calibrate2, doc, "auto_calibrate2");
-    docToValue(analogOptions.joystick_center_x, doc, "joystickCenterX");
-    docToValue(analogOptions.joystick_center_y, doc, "joystickCenterY");
-    docToValue(analogOptions.joystick_center_x2, doc, "joystickCenterX2");
-    docToValue(analogOptions.joystick_center_y2, doc, "joystickCenterY2");
-    docToValue(analogOptions.analog_smoothing, doc, "analog_smoothing");
-    docToValue(analogOptions.analog_smoothing2, doc, "analog_smoothing2");
-    docToValue(analogOptions.smoothing_factor, doc, "smoothing_factor");
-    docToValue(analogOptions.smoothing_factor2, doc, "smoothing_factor2");
-    docToValue(analogOptions.analog_error, doc, "analog_error");
-    docToValue(analogOptions.analog_error2, doc, "analog_error2");
-    docToValue(analogOptions.enabled, doc, "AnalogInputEnabled");
+    AnalogPlusOptions& options = Storage::getInstance().getAddonOptions().analogPlusOptions;
 
-    docToValue(analogOptions.analog_mux_channels, doc, "analog_mux_channels");
-    docToPin(analogOptions.analogSelectPin0, doc, "analogSelectPin0");
-    docToPin(analogOptions.analogSelectPin1, doc, "analogSelectPin1");
-    docToPin(analogOptions.analogSelectPin2, doc, "analogSelectPin2");
-    docToPin(analogOptions.analogSelectPin3, doc, "analogSelectPin3");
+    options.enabled = doc["enabled"];
+    options.mux_channels = doc["mux_channels"];
 
-    docToValue(analogOptions.analog_mux_1, doc, "analog_mux_1");
-    docToValue(analogOptions.analog_channel_x_1, doc, "analog_channel_x_1");
-    docToValue(analogOptions.analog_channel_y_1, doc, "analog_channel_y_1");
-    
-    docToValue(analogOptions.analog_mux_2, doc, "analog_mux_2");
-    docToValue(analogOptions.analog_channel_x_2, doc, "analog_channel_x_2");
-    docToValue(analogOptions.analog_channel_y_2, doc, "analog_channel_y_2");
-
-    
-    docToValue(analogOptions.analog_linearity_1, doc, "analog_linearity_1");
-    docToValue(analogOptions.analog_linearity_margin_1, doc, "analog_linearity_margin_1");
-    docToValue(analogOptions.analog_linearity_2, doc, "analog_linearity_2");
-    docToValue(analogOptions.analog_linearity_margin_2, doc, "analog_linearity_margin_2");
-
-    docToValue(analogOptions.analog_angle_snapping_1, doc, "analog_angle_snapping_1");
-    JsonArray directions = doc["analog_directions_1"];
-    int direction_count=0;
-    for (JsonObject d : directions) {
-        analogOptions.analog_directions_1[direction_count].angle = d["angle"];
-        analogOptions.analog_directions_1[direction_count].snap_margin = d["snap_margin"];
-        analogOptions.analog_directions_1[direction_count].activation = d["activation"];
-        analogOptions.analog_directions_1[direction_count].release = d["release"];
-        if (++direction_count >= ANALOG_MAX_DIRECTIONS) {
-            direction_count = ANALOG_MAX_DIRECTIONS;
-            break;
-        }
+    JsonArray select_pins = doc["select_pins"];
+    int i=0;
+    for (Pin_t pin: select_pins){
+        options.select_pins[i] = select_pins[i];
+        if (++i >= ANALOG_PLUS_SELECT_PIN_MAX) break;
     }
-    analogOptions.analog_direction_count_1 = direction_count;
 
-    docToValue(analogOptions.analog_angle_snapping_2, doc, "analog_angle_snapping_2");
-    directions = doc["analog_directions_2"];
-    direction_count=0;
-    for (JsonObject d : directions) {
-        analogOptions.analog_directions_2[direction_count].angle = d["angle"];
-        analogOptions.analog_directions_2[direction_count].snap_margin = d["snap_margin"];
-        analogOptions.analog_directions_2[direction_count].activation = d["activation"];
-        analogOptions.analog_directions_2[direction_count].release = d["release"];
-        if (++direction_count >= ANALOG_MAX_DIRECTIONS) {
-            direction_count = ANALOG_MAX_DIRECTIONS;
-            break;
+    JsonArray analog_configs = doc["analog_configs"];
+    i=0;
+    for (JsonObject config: analog_configs) {
+        options.analog_configs[i].analog_mode = config["analog_mode"];
+        options.analog_configs[i].use_mux = config["use_mux"];
+        options.analog_configs[i].channel_x = config["channel_x"];
+        options.analog_configs[i].channel_y = config["channel_y"];
+        options.analog_configs[i].pin_x = config["pin_x"];
+        options.analog_configs[i].pin_y = config["pin_y"];
+        options.analog_configs[i].invert_mode = config["invert_mode"];
+        options.analog_configs[i].forced_circularity = config["forced_circularity"];
+        options.analog_configs[i].inner_deadzone = config["inner_deadzone"];
+        options.analog_configs[i].outer_deadzone = config["outer_deadzone"];
+        options.analog_configs[i].auto_calibrate = config["auto_calibrate"];
+
+        JsonArray calibration_points = config["calibration_points"];
+        int j=0;
+        for (JsonObject calibration_point: calibration_points) {
+                options.analog_configs[i].calibration_points[j].enabled = true;
+                options.analog_configs[i].calibration_points[j].source_x = calibration_point["source_x"];
+                options.analog_configs[i].calibration_points[j].source_y = calibration_point["source_y"];
+                options.analog_configs[i].calibration_points[j].target_x = calibration_point["target_x"];
+                options.analog_configs[i].calibration_points[j].target_y = calibration_point["target_y"];
+            
+            if (++j >= ANALOG_PLUS_CALIBRATION_COUNT_MAX) break;
         }
+        while (j < ANALOG_PLUS_CALIBRATION_COUNT_MAX) {
+            options.analog_configs[i].calibration_points[j++].enabled = false;
+        }
+
+        options.analog_configs[i].smoothing_factor = config["smoothing_factor"];
+        options.analog_configs[i].analog_error = config["analog_error"];
+        options.analog_configs[i].linearity = config["linearity"];
+        options.analog_configs[i].analog_snapping = config["analog_snapping"];
+        
+        JsonArray snap_directions = config["snap_directions"];
+        j=0;
+        for (JsonObject direction: snap_directions) {
+            options.analog_configs[i].snap_directions[j].enabled = true;
+            options.analog_configs[i].snap_directions[j].angle = direction["angle"];
+            options.analog_configs[i].snap_directions[j].snap_margin = direction["snap_margin"];
+            options.analog_configs[i].snap_directions[j].activation = direction["activation"];
+            options.analog_configs[i].snap_directions[j].release = direction["release"];
+
+            if(++j >= ANALOG_PLUS_SNAP_DIRECTION_COUNT_MAX) break;
+        }
+        while(j < ANALOG_PLUS_SNAP_DIRECTION_COUNT_MAX) {
+            options.analog_configs[i].snap_directions[j++].enabled = false;
+        }
+        
+        if (++i >= ANALOG_PLUS_COUNT) break;
     }
-    analogOptions.analog_direction_count_2 = direction_count;
-
-    docToValue(analogOptions.analog_rotation_offset_1, doc, "analog_rotation_offset_1");
-    docToValue(analogOptions.analog_rotation_offset_2, doc, "analog_rotation_offset_2");
-
+    
     EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
 
     return serialize_json(doc);
@@ -2774,8 +2758,9 @@ std::string getAnalogPlusOptions()
     DynamicJsonDocument doc(capacity);
 
     const AnalogPlusOptions& options = Storage::getInstance().getAddonOptions().analogPlusOptions;
-    writeDoc(doc, "enabled", options.enabled);
-    writeDoc(doc, "mux_channels", options.mux_channels);
+    doc["enabled"] = options.enabled;
+    doc["mux_channels"] = options.mux_channels;
+
     JsonArray select_pins = doc.createNestedArray("select_pins");
     for (int i = 0; i < options.select_pins_count; i++) {
         select_pins[i] = cleanPin(options.select_pins[i]);
@@ -2803,12 +2788,10 @@ std::string getAnalogPlusOptions()
                 continue;
             }
             JsonObject calibration_point = calibration_points.createNestedObject();
-            JsonObject source = calibrationPoint.createNestedObject("source");
-            JsonObject target = calibrationPoint.createNestedObject("target");
-            source["x"] = options.analog_configs[i].calibration_points[j].source_x;
-            source["y"] = options.analog_configs[i].calibration_points[j].source_y;
-            target["x"] = options.analog_configs[i].calibration_points[j].target_x;
-            target["y"] = options.analog_configs[i].calibration_points[j].target_y;
+            calibration_point["source_x"] = options.analog_configs[i].calibration_points[j].source_x;
+            calibration_point["source_y"] = options.analog_configs[i].calibration_points[j].source_y;
+            calibration_point["target_x"] = options.analog_configs[i].calibration_points[j].target_x;
+            calibration_point["target_y"] = options.analog_configs[i].calibration_points[j].target_y;
         }
 
         config["smoothing_factor"] = options.analog_configs[i].smoothing_factor;
@@ -2828,7 +2811,6 @@ std::string getAnalogPlusOptions()
             direction["activation"] = options.analog_configs[i].snap_directions[j].activation;
             direction["release"] = options.analog_configs[i].snap_directions[j].release;
         }
-       
     }
 
     return serialize_json(doc);

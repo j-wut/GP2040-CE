@@ -2,7 +2,6 @@
 import { ChangeEvent, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Col, FormCheck, Row, Tab, Tabs } from 'react-bootstrap';
-import * as yup from 'yup';
 
 import Section from '../Components/Section';
 import FormSelect from '../Components/FormSelect';
@@ -11,7 +10,7 @@ import AnalogPinOptions from '../Components/AnalogPinOptions';
 import { AppContext } from '../Contexts/AppContext';
 import FormControl from '../Components/FormControl';
 import { AddonPropTypes } from '../Pages/AddonsConfigPage';
-import { ADC_MAX, AnalogCalibrationPoint, AnalogInvertMode, AnalogMode, AnalogPlusConfig, AnalogPlusOptions } from '../Data/Types';
+import { AnalogCalibrationPoint, AnalogInvertMode, AnalogMode, AnalogPlusOptions } from '../Data/Types';
 import WebApi from '../Services/WebApi';
 import AnalogPlusCalibration from "../Components/AnalogPlusCalibration";
 
@@ -47,10 +46,10 @@ export const analogPlusDefaultState: AnalogPlusOptions = {
 	select_pins: [],
 	
 	analog_configs: [{
-		analog_mode: AnalogMode.DISABLED,
+		analog_mode: 1,
 		pin_x: 0,
 		pin_y: 0,
-		invert_mode: AnalogInvertMode.NONE,
+		invert_mode: 0,
 		forced_circularity: false,
 		inner_deadzone: 0,
 		outer_deadzone: 95,
@@ -66,10 +65,10 @@ export const analogPlusDefaultState: AnalogPlusOptions = {
 		angle_snapping: false,
 		snap_directions: []
 	},{
-		analog_mode: AnalogMode.DISABLED,
+		analog_mode: 2,
 		pin_x: 0,
 		pin_y: 0,
-		invert_mode: AnalogInvertMode.NONE,
+		invert_mode: 0,
 		forced_circularity: false,
 		inner_deadzone: 0,
 		outer_deadzone: 95,
@@ -94,21 +93,22 @@ const AnalogPlus = ({  }: AddonPropTypes) => {
 
 	const saveCalibration = (index: number, calibrationPoints: AnalogCalibrationPoint[], invertMode: AnalogInvertMode) => {
 
-		analogPlusOptions.analogOptions[index].calibration_points = calibrationPoints;
-		analogPlusOptions.analogOptions[index].invert_mode = invertMode;
+		analogPlusOptions.analog_configs[index].calibration_points = calibrationPoints;
+		analogPlusOptions.analog_configs[index].invert_mode = invertMode;
 
 		setAnalogPlusOptions(analogPlusOptions);
 	}
 
 	const setAnalogConfig = (index: number, fieldName: string , value: any) => {
-		const temp = {...analogPlusOptions};
-		temp.analogOptions[index][fieldName] = value;
+
+		const temp: AnalogPlusOptions = {...analogPlusOptions};
+		temp.analog_configs[index][fieldName] = value;
 		setAnalogPlusOptions(temp)
 	}
 
 	
 	const setAddonField = (fieldName: string , value: any) => {
-		const temp = {...analogPlusOptions}
+		const temp: AnalogPlusOptions = {...analogPlusOptions}
 		temp[fieldName] = value;
 		setAnalogPlusOptions(temp)
 	}
@@ -124,9 +124,9 @@ const AnalogPlus = ({  }: AddonPropTypes) => {
 
 
 	useEffect(()=>{
-		// WebApi.getAnalogPlusSettings().then(
-		// 	setAnalogConfig
-		// )
+		WebApi.getAnalogPlusSettings().then(
+			setAnalogPlusOptions
+		)
 	}, [])
 
 	
@@ -171,7 +171,9 @@ const AnalogPlus = ({  }: AddonPropTypes) => {
 						value={analogPlusOptions.mux_channels}
 						// error={errors.analog_mux_channels}
 						// isInvalid={Boolean(errors.analog_mux_channels)}
-						onChange={handleChange}
+						onChange={
+							(e) => setAddonField(e.target.name, +e.target.value)
+						}
 					>
 						{Object.entries(CHANNELS_OPTIONS).map(([num, label], i) => (
 							<option key={`channels-per-mux-option-${i}`} value={num}>
@@ -219,8 +221,8 @@ const AnalogPlus = ({  }: AddonPropTypes) => {
 							{showCalibration && <>
 							<AnalogPlusCalibration 
 									showCalibration={showCalibration}
-									pluginConfig={analogPlusOptions}
-									options={config}
+									pluginOptions={analogPlusOptions}
+									config={config}
 									hideCalibration={() => setShowCalibration(false)}
 									saveCalibration={(calibrationPoints: AnalogCalibrationPoint[], invertMode: AnalogInvertMode) => saveCalibration(index, calibrationPoints, invertMode)}/>
 									</>}
@@ -441,6 +443,9 @@ const AnalogPlus = ({  }: AddonPropTypes) => {
 					}
 				</Tabs>
 			</div>
+			<Button onClick={async () => await WebApi.setAnalogPlusOptions(analogPlusOptions)}>
+				{t('Common:button-save-label')}
+			</Button>
 			<FormCheck
 				label={t('Common:switch-enabled')}
 				type="switch"

@@ -644,53 +644,6 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, outer_deadzone2, DEFAULT_OUTER_DEADZONE2);
     INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, auto_calibrate2, !!AUTO_CALIBRATE2_ENABLED);
     INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, forced_circularity2, !!FORCED_CIRCULARITY2_ENABLED);
-    
-    // analog with mux
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_mux_channels, ANALOG_MUX_CHANNELS);
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analogSelectPin0, ANALOG_DEFAULT_SELECT_PIN_0);
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analogSelectPin1, ANALOG_DEFAULT_SELECT_PIN_1);
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analogSelectPin2, ANALOG_DEFAULT_SELECT_PIN_2);
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analogSelectPin3, ANALOG_DEFAULT_SELECT_PIN_3);
-
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_mux_1, !!ANALOG_MUX_1_ENABLED);
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_channel_x_1, ANALOG_MUX_CHANNEL_X_1);
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_channel_y_1, ANALOG_MUX_CHANNEL_Y_1);
-
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_mux_2, !!ANALOG_MUX_2_ENABLED);
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_channel_x_2, ANALOG_MUX_CHANNEL_X_2);
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_channel_y_2, ANALOG_MUX_CHANNEL_Y_2);
-
-    // analog linearity & angle snapping
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_linearity_1, !!ANALOG_LINEARITY_ENABLED_1);
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_linearity_margin_1, ANALOG_LINEARITY_MARGIN_1);
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_angle_snapping_1, !!ANALOG_ANGLE_SNAPPING_ENABLED_1);
-
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_linearity_2, !!ANALOG_LINEARITY_ENABLED_2);
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_linearity_margin_2, ANALOG_LINEARITY_MARGIN_2);
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_angle_snapping_2, !!ANALOG_ANGLE_SNAPPING_ENABLED_2);
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_rotation_offset_1, ANALOG_ROTATION_OFFSET);
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_rotation_offset_2, ANALOG_ROTATION_OFFSET);
-
-    // Set 8-way directions
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_direction_count_1, ANALOG_DIRECTION_COUNT_1);
-    for(int i = 0; i < ANALOG_DIRECTION_COUNT_1; i++) {
-        INIT_UNSET_PROPERTY(config.addonOptions.analogOptions.analog_directions_1[i], angle, (float)i * M_PI / 4.0);
-        INIT_UNSET_PROPERTY(config.addonOptions.analogOptions.analog_directions_1[i], snap_margin, M_PI / 8.0);
-        INIT_UNSET_PROPERTY(config.addonOptions.analogOptions.analog_directions_1[i], activation, (float)DEFAULT_INNER_DEADZONE);
-        INIT_UNSET_PROPERTY(config.addonOptions.analogOptions.analog_directions_1[i], release, (float)DEFAULT_OUTER_DEADZONE );
-    }
-
-    INIT_UNSET_PROPERTY(config.addonOptions.analogOptions, analog_direction_count_2, ANALOG_DIRECTION_COUNT_2);
-    for(int i = 0; i < ANALOG_DIRECTION_COUNT_2; i++) {
-        INIT_UNSET_PROPERTY(config.addonOptions.analogOptions.analog_directions_2[i], angle, (float)i * M_PI / 4.0);
-        INIT_UNSET_PROPERTY(config.addonOptions.analogOptions.analog_directions_2[i], snap_margin, M_PI / 8.0);
-        INIT_UNSET_PROPERTY(config.addonOptions.analogOptions.analog_directions_2[i], activation, (float)DEFAULT_INNER_DEADZONE);
-        INIT_UNSET_PROPERTY(config.addonOptions.analogOptions.analog_directions_2[i], release, (float)DEFAULT_OUTER_DEADZONE );
-    }
-
-    // tell nanopb to persist 16 directions worth of data
-    config.addonOptions.analogOptions.analog_directions_1_count = ANALOG_MAX_DIRECTIONS;
-    config.addonOptions.analogOptions.analog_directions_2_count = ANALOG_MAX_DIRECTIONS;
 
     // addonOptions.analogPlusOptions
     INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions, enabled, !!ANALOG_PLUS_ENABLED);
@@ -722,7 +675,15 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0], analog_error, ANALOG_PLUS_ANALOG_ERROR_1);
     INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0], linearity, ANALOG_PLUS_LINEARITY_1);
     INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0], analog_snapping, ANALOG_PLUS_ANALOG_SNAPPING_1);
-    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0], auto_calibrate, ANALOG_PLUS_AUTO_CALIBRATE_1);
+    
+    for (int j=0; j<ANALOG_PLUS_SNAP_DIRECTION_COUNT_MAX; j++) {
+        INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0].snap_directions[j], enabled, false);
+        INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0].snap_directions[j], angle, 0.0f);
+        INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0].snap_directions[j], snap_margin, 0.0f);
+        INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0].snap_directions[j], activation, 0.0f);
+        INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[0].snap_directions[j], release, 0.0f);
+    }
+    config.addonOptions.analogPlusOptions.analog_configs[0].snap_directions_count = ANALOG_PLUS_SNAP_DIRECTION_COUNT_MAX;
 
     INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1], analog_mode, ANALOG_PLUS_MODE_2);
     INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1], use_mux, !!ANALOG_PLUS_USE_MUX_2);
@@ -742,12 +703,20 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
         INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1].calibration_points[j], target_x, 0.0f);
         INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1].calibration_points[j], target_y, 0.0f);
     }
-    config.addonOptions.analogPlusOptions.analog_configs[0].calibration_points_count = ANALOG_PLUS_CALIBRATION_COUNT_MAX;
+    config.addonOptions.analogPlusOptions.analog_configs[1].calibration_points_count = ANALOG_PLUS_CALIBRATION_COUNT_MAX;
     INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1], smoothing_factor, ANALOG_PLUS_SMOOTHING_FACTOR_2);
     INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1], analog_error, ANALOG_PLUS_ANALOG_ERROR_2);
     INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1], linearity, ANALOG_PLUS_LINEARITY_2);
     INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1], analog_snapping, ANALOG_PLUS_ANALOG_SNAPPING_2);
-    INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1], auto_calibrate, ANALOG_PLUS_AUTO_CALIBRATE_2);
+
+    for (int j=0; j<ANALOG_PLUS_SNAP_DIRECTION_COUNT_MAX; j++) {
+        INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1].snap_directions[j], enabled, false);
+        INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1].snap_directions[j], angle, 0.0f);
+        INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1].snap_directions[j], snap_margin, 0.0f);
+        INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1].snap_directions[j], activation, 0.0f);
+        INIT_UNSET_PROPERTY(config.addonOptions.analogPlusOptions.analog_configs[1].snap_directions[j], release, 0.0f);
+    }
+    config.addonOptions.analogPlusOptions.analog_configs[1].snap_directions_count = ANALOG_PLUS_SNAP_DIRECTION_COUNT_MAX;
 
     config.addonOptions.analogPlusOptions.analog_configs_count = 2;
 

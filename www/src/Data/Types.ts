@@ -40,8 +40,10 @@ export interface AnalogSnapDirection {
 }
 
 export interface AnalogCalibrationPoint {
-	source: JoystickPosition,
-	target: JoystickPosition
+	source_x: number;
+	source_y: number;
+	target_x: number;
+	target_y: number;
 }
 
 export interface AnalogPlusConfig {
