@@ -47,8 +47,8 @@
 #define ANALOG_PLUS_MODE_1 DpadMode.DPAD_MODE_LEFT_ANALOG
 #endif
 
-#ifndef ANALOG_PLUS_MODE_1
-#define ANALOG_PLUS_MODE_1 DpadMode.DPAD_MODE_RIGHT_ANALOG
+#ifndef ANALOG_PLUS_MODE_2
+#define ANALOG_PLUS_MODE_2 DpadMode.DPAD_MODE_RIGHT_ANALOG
 #endif
 
 #ifndef ANALOG_PLUS_USE_MUX_DEFAULT
@@ -93,6 +93,7 @@
 
 #ifndef ANALOG_PLUS_INVERT_MODE_DEFAULT
 #define ANALOG_PLUS_INVERT_MODE_DEFAULT AnalogInvertMode.NONE
+#endif
 
 #ifndef ANALOG_PLUS_INVERT_MODE_1
 #define ANALOG_PLUS_INVERT_MODE_1 ANALOG_PLUS_INVERT_MODE_DEFAULT
@@ -205,18 +206,19 @@ public:
     virtual void reinit() {}
     virtual std::string name() { return AnalogPlusName; }
 private:
-    void selectChannel(uint8_t channel);
-    float readPin(int stick_num, Pin_t pin, uint16_t center);
-    float emaCalculation(int stick_num, float ema_value, float ema_previous);
+    float radianDiff(float angle1, float angle2);
     uint16_t map(uint16_t x, uint16_t in_min, uint16_t in_max, uint16_t out_min, uint16_t out_max);
-    float magnitudeCalculation(int stick_num, adc_instance & adc_inst);
-    void setRadianDirection(adc_instance & adc_inst);
-    void correctLinearity(adc_instance & adc_inst);
-    void snapToDirection(adc_instance & adc_inst);
-    void radialDeadzone(int stick_num, adc_instance & adc_inst);
+    void selectChannel(uint8_t channel);
+    void readXY(int stick_num);
+    void applyCalibration(int stick_num);
+    float emaCalculation(int stick_num, float ema_value, float ema_previous);
+    void calculatePolar(int stick_num);
+    void correctLinearity(int stick_num);
+    void snapToDirection(int stick_num);
+
     AnalogState joystick_state[ANALOG_PLUS_COUNT];
     int selectPins;
-    const AnalogPlusOptions& options = Storage::getInstance().getAddonOptions().analogPlusOptions;
+    AnalogPlusOptions& options;
 };
 
 #endif  // _Analog_H_

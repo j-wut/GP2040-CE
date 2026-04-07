@@ -400,9 +400,9 @@ message AnalogPlusOptions
     optional bool enabled = 1;
     
     optional int32 mux_channels = 2;
-    optional int32 select_pins = 3 [(nanopb).max_count = 4];
+    repeated int32 select_pins = 3 [(nanopb).max_count = 4];
 
-    optional AnalogPlusConfig analog_configs = 4 [(nanopb).max_count = 2];
+    repeated AnalogPlusConfig analog_configs = 4 [(nanopb).max_count = 2];
 }
 
 message AnalogPlusConfig
@@ -418,13 +418,13 @@ message AnalogPlusConfig
     optional float inner_deadzone = 9;
     optional float outer_deadzone = 10;
     optional bool auto_calibrate = 11;
-    optional AnalogCalibrationPoint calibration_points = 12 [(nanopb).max_count = 13];
+    repeated AnalogCalibrationPoint calibration_points = 12 [(nanopb).max_count = 13];
     optional bool analog_smoothing = 13;
     optional float smoothing_factor = 14;
     optional uint32 analog_error = 15;
     optional float linearity = 16;
     optional bool analog_snapping = 17;
-    optional AnalogSnapDirection snap_directions = 18 [(nanopb).max_count = 16];
+    repeated AnalogSnapDirection snap_directions = 18 [(nanopb).max_count = 16];
 }
 
 message AnalogCalibrationPoint
