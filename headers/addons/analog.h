@@ -99,111 +99,6 @@
 #define ANALOG_ERROR2 1000
 #endif
 
-#ifndef ANALOG_MUX_CHANNELS
-#define ANALOG_MUX_CHANNELS 8
-#endif
-
-#ifndef ANALOG_DEFAULT_SELECT_PIN
-#define ANALOG_DEFAULT_SELECT_PIN -1
-#endif
-
-#ifndef ANALOG_DEFAULT_SELECT_PIN_0
-#define ANALOG_DEFAULT_SELECT_PIN_0 ANALOG_DEFAULT_SELECT_PIN
-#endif
-
-#ifndef ANALOG_DEFAULT_SELECT_PIN_1
-#define ANALOG_DEFAULT_SELECT_PIN_1 ANALOG_DEFAULT_SELECT_PIN
-#endif
-
-#ifndef ANALOG_DEFAULT_SELECT_PIN_2
-#define ANALOG_DEFAULT_SELECT_PIN_2 ANALOG_DEFAULT_SELECT_PIN
-#endif
-
-#ifndef ANALOG_DEFAULT_SELECT_PIN_3
-#define ANALOG_DEFAULT_SELECT_PIN_3 ANALOG_DEFAULT_SELECT_PIN
-#endif
-
-#ifndef ANALOG_MUX_1_ENABLED
-#define ANALOG_MUX_1_ENABLED 0
-#endif
-
-#ifndef ANALOG_MUX_CHANNEL_X_DEFAULT
-#define ANALOG_MUX_CHANNEL_X_DEFAULT -1
-#endif
-
-#ifndef ANALOG_MUX_CHANNEL_X_1
-#define ANALOG_MUX_CHANNEL_X_1 ANALOG_MUX_CHANNEL_X_DEFAULT
-#endif
-
-#ifndef ANALOG_MUX_CHANNEL_X_2
-#define ANALOG_MUX_CHANNEL_X_2 ANALOG_MUX_CHANNEL_X_DEFAULT
-#endif
-
-#ifndef ANALOG_MUX_CHANNEL_Y_DEFAULT
-#define ANALOG_MUX_CHANNEL_Y_DEFAULT -1
-#endif
-
-#ifndef ANALOG_MUX_CHANNEL_Y_1
-#define ANALOG_MUX_CHANNEL_Y_1 ANALOG_MUX_CHANNEL_Y_DEFAULT
-#endif
-
-#ifndef ANALOG_MUX_CHANNEL_Y_2
-#define ANALOG_MUX_CHANNEL_Y_2 ANALOG_MUX_CHANNEL_Y_DEFAULT
-#endif
-
-#ifndef ANALOG_MUX_2_ENABLED
-#define ANALOG_MUX_2_ENABLED 0
-#endif
-
-#ifndef ANALOG_LINEARITY_ENABLED_1
-#define ANALOG_LINEARITY_ENABLED_1 0
-#endif
-
-#ifndef ANALOG_LINEARITY_ENABLED_2
-#define ANALOG_LINEARITY_ENABLED_2 0
-#endif
-
-#ifndef ANALOG_LINEARITY_MARGIN_DEFAULT
-#define ANALOG_LINEARITY_MARGIN_DEFAULT  1 * (M_PI / 180)
-#endif
-
-#ifndef ANALOG_LINEARITY_MARGIN_1
-#define ANALOG_LINEARITY_MARGIN_1 ANALOG_LINEARITY_MARGIN_DEFAULT
-#endif
-
-#ifndef ANALOG_LINEARITY_MARGIN_2
-#define ANALOG_LINEARITY_MARGIN_2 ANALOG_LINEARITY_MARGIN_DEFAULT
-#endif
-
-#ifndef ANALOG_ANGLE_SNAPPING_ENABLED_1
-#define ANALOG_ANGLE_SNAPPING_ENABLED_1 0
-#endif
-
-#ifndef ANALOG_ANGLE_SNAPPING_ENABLED_2
-#define ANALOG_ANGLE_SNAPPING_ENABLED_2 0
-#endif
-
-#ifndef ANALOG_MAX_DIRECTIONS
-#define ANALOG_MAX_DIRECTIONS 16
-#endif
-
-#ifndef ANALOG_DEFAULT_DIRECTIONS
-#define ANALOG_DEFAULT_DIRECTIONS 8
-#endif
-
-#ifndef ANALOG_DIRECTION_COUNT_1
-#define ANALOG_DIRECTION_COUNT_1 ANALOG_DEFAULT_DIRECTIONS
-#endif
-
-#ifndef ANALOG_DIRECTION_COUNT_2
-#define ANALOG_DIRECTION_COUNT_2 ANALOG_DEFAULT_DIRECTIONS
-#endif
-
-#ifndef ANALOG_ROTATION_OFFSET
-#define ANALOG_ROTATION_OFFSET 0
-#endif
-
-
 // Analog Module Name
 #define AnalogName "Analog"
 
@@ -235,19 +130,6 @@ typedef struct
     bool forced_circularity;
     uint32_t joystick_center_x;
     uint32_t joystick_center_y;
-    bool use_mux;
-    uint32_t mux_channel_x;
-    uint32_t mux_channel_y;
-
-    float xy_radians;
-    float prev_xy_radians;
-    bool linearity;
-    float linearityMargin;
-
-    bool angle_snapping;
-    int snap_direction_count;
-    const AnalogDirection * snap_directions;
-    float angle_offset;
 } adc_instance;
 
 class AnalogInput : public GPAddon {
@@ -260,18 +142,12 @@ public:
     virtual void reinit() {}
     virtual std::string name() { return AnalogName; }
 private:
-    void selectChannel(uint8_t channel);
     float readPin(int stick_num, Pin_t pin, uint16_t center);
     float emaCalculation(int stick_num, float ema_value, float ema_previous);
     uint16_t map(uint16_t x, uint16_t in_min, uint16_t in_max, uint16_t out_min, uint16_t out_max);
     float magnitudeCalculation(int stick_num, adc_instance & adc_inst);
-    void setRadianDirection(adc_instance & adc_inst);
-    void correctLinearity(adc_instance & adc_inst);
-    void snapToDirection(adc_instance & adc_inst);
     void radialDeadzone(int stick_num, adc_instance & adc_inst);
     adc_instance adc_pairs[ADC_COUNT];
-    int selectPins;
-    Pin_t selectPinArray[4];
 };
 
 #endif  // _Analog_H_

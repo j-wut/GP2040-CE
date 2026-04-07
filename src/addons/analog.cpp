@@ -35,18 +35,6 @@ void AnalogInput::setup() {
     adc_pairs[0].forced_circularity = analogOptions.forced_circularity;
     adc_pairs[0].joystick_center_x = analogOptions.joystick_center_x;
     adc_pairs[0].joystick_center_y = analogOptions.joystick_center_y;
-    adc_pairs[0].use_mux = analogOptions.analog_mux_1;
-    adc_pairs[0].mux_channel_x = analogOptions.analog_channel_x_1;
-    adc_pairs[0].mux_channel_y = analogOptions.analog_channel_y_1;
-
-    adc_pairs[0].linearity = analogOptions.analog_linearity_1;
-    adc_pairs[0].linearityMargin = analogOptions.analog_linearity_margin_1;
-    adc_pairs[0].angle_snapping = analogOptions.analog_angle_snapping_1;
-    adc_pairs[0].snap_direction_count = analogOptions.analog_direction_count_1;
-    adc_pairs[0].snap_directions = analogOptions.analog_directions_1;
-    adc_pairs[0].angle_offset = analogOptions.analog_rotation_offset_1;
-
-
     adc_pairs[1].x_pin = analogOptions.analogAdc2PinX;
     adc_pairs[1].y_pin = analogOptions.analogAdc2PinY;
     adc_pairs[1].analog_invert = analogOptions.analogAdc2Invert;
@@ -60,16 +48,7 @@ void AnalogInput::setup() {
     adc_pairs[1].forced_circularity = analogOptions.forced_circularity2;
     adc_pairs[1].joystick_center_x = analogOptions.joystick_center_x2;
     adc_pairs[1].joystick_center_y = analogOptions.joystick_center_y2;
-    adc_pairs[1].use_mux = analogOptions.analog_mux_2;
-    adc_pairs[1].mux_channel_x = analogOptions.analog_channel_x_2;
-    adc_pairs[1].mux_channel_y = analogOptions.analog_channel_y_2;
-
-    adc_pairs[1].linearity = analogOptions.analog_linearity_2;
-    adc_pairs[1].linearityMargin = analogOptions.analog_linearity_margin_2;
-    adc_pairs[1].angle_snapping = analogOptions.analog_angle_snapping_2;
-    adc_pairs[1].snap_direction_count = analogOptions.analog_direction_count_2;
-    adc_pairs[1].snap_directions = analogOptions.analog_directions_2;
-    adc_pairs[1].angle_offset = analogOptions.analog_rotation_offset_2;
+    
 
     // Setup defaults and helpers
     for (int i = 0; i < ADC_COUNT; i++) {
@@ -82,38 +61,6 @@ void AnalogInput::setup() {
         adc_pairs[i].y_magnitude = 0.0f;
         adc_pairs[i].x_ema = 0.0f;
         adc_pairs[i].y_ema = 0.0f;
-        adc_pairs[i].xy_radians = 0.0f;
-        adc_pairs[i].prev_xy_radians = 0.0f;
-    }
-
-    if (adc_pairs[0].use_mux || adc_pairs[1].use_mux) {
-        switch(analogOptions.analog_mux_channels) {
-            case 4:
-                this->selectPins = 2;
-                break;
-            case 8:
-                this->selectPins = 3;
-                break;
-            case 16:
-                this->selectPins = 4;
-                break;
-            case 1:
-            default:
-                this->selectPins = 0;
-                break;
-        }
-
-        selectPinArray[0] = analogOptions.analogSelectPin0;
-        selectPinArray[1] = analogOptions.analogSelectPin1;
-        selectPinArray[2] = analogOptions.analogSelectPin2;
-        selectPinArray[3] = analogOptions.analogSelectPin3;
-        for(int i = 0; i < selectPins; i++) {
-            if ( selectPinArray[i] != -1 ) {
-                gpio_init(selectPinArray[i]);
-                gpio_set_dir(selectPinArray[i], GPIO_OUT);
-                gpio_put(selectPinArray[i], 0);
-            }
-        }
     }
 
     // Intialize and auto center X/Y for each pair
@@ -121,9 +68,6 @@ void AnalogInput::setup() {
         if(isValidPin(adc_pairs[i].x_pin)) {
             adc_gpio_init(adc_pairs[i].x_pin);
             if (adc_pairs[i].auto_calibration) {
-                if(adc_pairs[i].use_mux) {
-                    selectChannel(adc_pairs[i].mux_channel_x);
-                }
                 adc_select_input(adc_pairs[i].x_pin - ADC_PIN_OFFSET);
                 adc_pairs[i].x_center = adc_read();
             } else {
@@ -134,9 +78,6 @@ void AnalogInput::setup() {
         if(isValidPin(adc_pairs[i].y_pin)) {
             adc_gpio_init(adc_pairs[i].y_pin);
             if (adc_pairs[i].auto_calibration) {
-                if(adc_pairs[i].use_mux) {
-                    selectChannel(adc_pairs[i].mux_channel_y);
-                }
                 adc_select_input(adc_pairs[i].y_pin - ADC_PIN_OFFSET);
                 adc_pairs[i].y_center = adc_read();
             } else {
@@ -144,14 +85,6 @@ void AnalogInput::setup() {
                 adc_pairs[i].y_center = adc_pairs[i].joystick_center_y;
             }
         }
-    }
-}
-
-void AnalogInput::selectChannel(uint8_t channel) {
-    for(int i = 0; i < selectPins; i++) {
-        if ( selectPinArray[i] != -1 ) {
-            gpio_put(selectPinArray[i], (channel >> i) & 0x01);
-        }   
     }
 }
 
@@ -168,9 +101,6 @@ void AnalogInput::process() {
     for(int i = 0; i < ADC_COUNT; i++) {
         // Read X-Axis
         if (isValidPin(adc_pairs[i].x_pin)) {
-            if(adc_pairs[i].use_mux) {
-                selectChannel(adc_pairs[i].mux_channel_x);
-            }
             adc_pairs[i].x_value = readPin(i, adc_pairs[i].x_pin_adc, adc_pairs[i].x_center);
             if (adc_pairs[i].analog_invert == InvertMode::INVERT_X || 
                 adc_pairs[i].analog_invert == InvertMode::INVERT_XY) {
@@ -183,9 +113,6 @@ void AnalogInput::process() {
         }
         // Read Y-Axis
         if (isValidPin(adc_pairs[i].y_pin)) {
-            if(adc_pairs[i].use_mux) {
-                selectChannel(adc_pairs[i].mux_channel_y);
-            }
             adc_pairs[i].y_value = readPin(i, adc_pairs[i].y_pin_adc, adc_pairs[i].y_center);
             if (adc_pairs[i].analog_invert == InvertMode::INVERT_Y || 
                 adc_pairs[i].analog_invert == InvertMode::INVERT_XY) {
@@ -198,19 +125,6 @@ void AnalogInput::process() {
         }
         // Look for dead-zones and circularity
         adc_pairs[i].xy_magnitude = magnitudeCalculation(i, adc_pairs[i]);
-        setRadianDirection(adc_pairs[i]);
-
-        if (adc_pairs[i].linearity) {
-            correctLinearity(adc_pairs[i]);
-        }
-
-        if (adc_pairs[i].angle_snapping) {
-            snapToDirection(adc_pairs[i]);
-        }
-
-        adc_pairs[i].x_magnitude = std::cos(adc_pairs[i].xy_radians) * adc_pairs[i].xy_magnitude;
-        adc_pairs[i].y_magnitude = std::sin(adc_pairs[i].xy_radians) * adc_pairs[i].xy_magnitude;
-
         if (adc_pairs[i].xy_magnitude < adc_pairs[i].in_deadzone) {
             adc_pairs[i].x_value = ANALOG_CENTER;
             adc_pairs[i].y_value = ANALOG_CENTER;
@@ -261,46 +175,6 @@ float AnalogInput::magnitudeCalculation(int stick_num, adc_instance & adc_inst) 
     adc_inst.x_magnitude = adc_inst.x_value - ANALOG_CENTER;
     adc_inst.y_magnitude = adc_inst.y_value - ANALOG_CENTER;
     return adc_pairs[stick_num].error_rate * std::sqrt((adc_inst.x_magnitude * adc_inst.x_magnitude) + (adc_inst.y_magnitude * adc_inst.y_magnitude));
-}
-
-void AnalogInput::setRadianDirection(adc_instance & adc_inst) {
-    // counter-clockwise from x axis
-    float angle = std::atan2(adc_inst.y_magnitude, adc_inst.x_magnitude) - adc_inst.angle_offset;
-    if (angle < 0) {
-        angle = angle + 2.0 * M_PI;
-    }
-    adc_inst.xy_radians = angle ;
-}
-
-void AnalogInput::correctLinearity(adc_instance & adc_inst) {
-    float diff = adc_inst.xy_radians - adc_inst.prev_xy_radians;
-    while (diff < - M_PI){
-        diff = diff + 2.0 * M_PI;
-    }
-    while (diff > M_PI) {
-        diff = diff - 2.0 * M_PI;
-    }
-    if (std::abs(diff) > adc_inst.linearityMargin) {
-        adc_inst.prev_xy_radians = adc_inst.xy_radians;
-    } else {
-        adc_inst.xy_radians = adc_inst.prev_xy_radians;
-    }
-}
-
-void AnalogInput::snapToDirection(adc_instance & adc_inst) {
-    for (int i=0; i< adc_inst.snap_direction_count; i++) {
-        float diff = adc_inst.xy_radians - adc_inst.snap_directions[i].angle;
-        while (diff < - M_PI){
-            diff = diff + 2.0 * M_PI;
-        }
-        while (diff > M_PI) {
-            diff = diff - 2.0 * M_PI;
-        }
-        if (std::abs(diff) < adc_inst.snap_directions[i].snap_margin) {
-            adc_inst.xy_radians = adc_inst.snap_directions[i].angle;
-            return;
-        }
-    }
 }
 
 void AnalogInput::radialDeadzone(int stick_num, adc_instance & adc_inst) {

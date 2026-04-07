@@ -2166,17 +2166,6 @@ std::string getAddonOptions()
     writeDoc(doc, "analog_error", analogOptions.analog_error);
     writeDoc(doc, "analog_error2", analogOptions.analog_error2);
     writeDoc(doc, "AnalogInputEnabled", analogOptions.enabled);
-    writeDoc(doc, "analog_mux_channels", analogOptions.analog_mux_channels);
-    writeDoc(doc, "analogSelectPin0", analogOptions.analogSelectPin0);
-    writeDoc(doc, "analogSelectPin1", analogOptions.analogSelectPin1);
-    writeDoc(doc, "analogSelectPin2", analogOptions.analogSelectPin2);
-    writeDoc(doc, "analogSelectPin3", analogOptions.analogSelectPin3);
-    writeDoc(doc, "analog_mux_1", analogOptions.analog_mux_1);
-    writeDoc(doc, "analog_channel_x_1", analogOptions.analog_channel_x_1);
-    writeDoc(doc, "analog_channel_y_1", analogOptions.analog_channel_y_1);
-    writeDoc(doc, "analog_mux_2", analogOptions.analog_mux_2);
-    writeDoc(doc, "analog_channel_x_2", analogOptions.analog_channel_x_2);
-    writeDoc(doc, "analog_channel_y_2", analogOptions.analog_channel_y_2);
 
     const BootselButtonOptions& bootselButtonOptions = Storage::getInstance().getAddonOptions().bootselButtonOptions;
     writeDoc(doc, "bootselButtonMap", bootselButtonOptions.buttonMap);
@@ -2779,84 +2768,68 @@ std::string setAnalogOptions()
     return serialize_json(doc);
 }
 
-std::string getAnalogOptions()
+std::string getAnalogPlusOptions()
 {
     const size_t capacity = JSON_OBJECT_SIZE(500);
     DynamicJsonDocument doc(capacity);
 
-    const AnalogOptions& analogOptions = Storage::getInstance().getAddonOptions().analogOptions;
-    writeDoc(doc, "analogAdc1PinX", cleanPin(analogOptions.analogAdc1PinX));
-    writeDoc(doc, "analogAdc1PinY", cleanPin(analogOptions.analogAdc1PinY));
-    writeDoc(doc, "analogAdc1Mode", analogOptions.analogAdc1Mode);
-    writeDoc(doc, "analogAdc1Invert", analogOptions.analogAdc1Invert);
-    writeDoc(doc, "analogAdc2PinX", cleanPin(analogOptions.analogAdc2PinX));
-    writeDoc(doc, "analogAdc2PinY", cleanPin(analogOptions.analogAdc2PinY));
-    writeDoc(doc, "analogAdc2Mode", analogOptions.analogAdc2Mode);
-    writeDoc(doc, "analogAdc2Invert", analogOptions.analogAdc2Invert);
-    writeDoc(doc, "forced_circularity", analogOptions.forced_circularity);
-    writeDoc(doc, "forced_circularity2", analogOptions.forced_circularity2);
-    writeDoc(doc, "inner_deadzone", analogOptions.inner_deadzone);
-    writeDoc(doc, "inner_deadzone2", analogOptions.inner_deadzone2);
-    writeDoc(doc, "outer_deadzone", analogOptions.outer_deadzone);
-    writeDoc(doc, "outer_deadzone2", analogOptions.outer_deadzone2);
-    writeDoc(doc, "auto_calibrate", analogOptions.auto_calibrate);
-    writeDoc(doc, "auto_calibrate2", analogOptions.auto_calibrate2);
-    writeDoc(doc, "joystickCenterX", analogOptions.joystick_center_x);
-    writeDoc(doc, "joystickCenterY", analogOptions.joystick_center_y);
-    writeDoc(doc, "joystickCenterX2", analogOptions.joystick_center_x2);
-    writeDoc(doc, "joystickCenterY2", analogOptions.joystick_center_y2);
-    writeDoc(doc, "analog_smoothing", analogOptions.analog_smoothing);
-    writeDoc(doc, "analog_smoothing2", analogOptions.analog_smoothing2);
-    writeDoc(doc, "smoothing_factor", analogOptions.smoothing_factor);
-    writeDoc(doc, "smoothing_factor2", analogOptions.smoothing_factor2);
-    writeDoc(doc, "analog_error", analogOptions.analog_error);
-    writeDoc(doc, "analog_error2", analogOptions.analog_error2);
-    writeDoc(doc, "AnalogInputEnabled", analogOptions.enabled);
-    writeDoc(doc, "analog_mux_channels", analogOptions.analog_mux_channels);
-    writeDoc(doc, "analogSelectPin0", analogOptions.analogSelectPin0);
-    writeDoc(doc, "analogSelectPin1", analogOptions.analogSelectPin1);
-    writeDoc(doc, "analogSelectPin2", analogOptions.analogSelectPin2);
-    writeDoc(doc, "analogSelectPin3", analogOptions.analogSelectPin3);
-    writeDoc(doc, "analog_mux_1", analogOptions.analog_mux_1);
-    writeDoc(doc, "analog_channel_x_1", analogOptions.analog_channel_x_1);
-    writeDoc(doc, "analog_channel_y_1", analogOptions.analog_channel_y_1);
-    writeDoc(doc, "analog_mux_2", analogOptions.analog_mux_2);
-    writeDoc(doc, "analog_channel_x_2", analogOptions.analog_channel_x_2);
-    writeDoc(doc, "analog_channel_y_2", analogOptions.analog_channel_y_2);
-    
-    writeDoc(doc, "analog_linearity_1", analogOptions.analog_linearity_1);
-    writeDoc(doc, "analog_linearity_margin_1", analogOptions.analog_linearity_margin_1);
-    writeDoc(doc, "analog_linearity_2", analogOptions.analog_linearity_2);
-    writeDoc(doc, "analog_linearity_margin_2", analogOptions.analog_linearity_margin_2);
-    
-    writeDoc(doc, "analog_angle_snapping_1", analogOptions.analog_angle_snapping_1);
-    writeDoc(doc, "analog_direction_count_1", analogOptions.analog_direction_count_1);
-
-    JsonArray analog_snap_directions_1 = doc.createNestedArray("analog_directions_1");
-    for (int i = 0; i < analogOptions.analog_direction_count_1; i++) {
-        JsonObject direction = analog_snap_directions_1.createNestedObject();
-
-        direction["angle"] = analogOptions.analog_directions_1[i].angle;
-        direction["snap_margin"] = analogOptions.analog_directions_1[i].snap_margin;
-        direction["activation"] = analogOptions.analog_directions_1[i].activation;
-        direction["release"] = analogOptions.analog_directions_1[i].release;
+    const AnalogPlusOptions& options = Storage::getInstance().getAddonOptions().analogPlusOptions;
+    writeDoc(doc, "enabled", options.enabled);
+    writeDoc(doc, "mux_channels", options.mux_channels);
+    JsonArray select_pins = doc.createNestedArray("select_pins");
+    for (int i = 0; i < options.select_pins_count; i++) {
+        select_pins[i] = cleanPin(options.select_pins[i]);
     }
+    
+    JsonArray analog_configs = doc.createNestedArray("analog_configs");
+    for (int i = 0; i < options.analog_configs_count; i++) {
+        JsonObject config = analog_configs.createNestedObject();
+        
+        config["analog_mode"] = options.analog_configs[i].analog_mode;
+        config["use_mux"] = options.analog_configs[i].use_mux;
+        config["channel_x"] = options.analog_configs[i].channel_x;
+        config["channel_y"] = options.analog_configs[i].channel_y;
+        config["pin_x"] = cleanPin(options.analog_configs[i].pin_x);
+        config["pin_y"] = cleanPin(options.analog_configs[i].pin_y);
+        config["invert_mode"] = options.analog_configs[i].invert_mode;
+        config["forced_circularity"] = options.analog_configs[i].forced_circularity;
+        config["inner_deadzone"] = options.analog_configs[i].inner_deadzone;
+        config["outer_deadzone"] = options.analog_configs[i].outer_deadzone;
+        config["auto_calibrate"] = options.analog_configs[i].auto_calibrate;
 
-    writeDoc(doc, "analog_angle_snapping_2", analogOptions.analog_angle_snapping_2);
-    writeDoc(doc, "analog_direction_count_2", analogOptions.analog_direction_count_2);
+        JsonArray calibration_points = config.createNestedArray("calibration_points");
+        for (int j=0; j<options.analog_configs[i].calibration_points_count; j++) {
+            if (!options.analog_configs[i].calibration_points[j].enabled) {
+                continue;
+            }
+            JsonObject calibration_point = calibration_points.createNestedObject();
+            JsonObject source = calibrationPoint.createNestedObject("source");
+            JsonObject target = calibrationPoint.createNestedObject("target");
+            source["x"] = options.analog_configs[i].calibration_points[j].source_x;
+            source["y"] = options.analog_configs[i].calibration_points[j].source_y;
+            target["x"] = options.analog_configs[i].calibration_points[j].target_x;
+            target["y"] = options.analog_configs[i].calibration_points[j].target_y;
+        }
 
-    JsonArray analog_snap_directions_2 = doc.createNestedArray("analog_directions_2");
-    for (int i = 0; i < analogOptions.analog_direction_count_2; i++) {
-        JsonObject direction = analog_snap_directions_2.createNestedObject();
+        config["smoothing_factor"] = options.analog_configs[i].smoothing_factor;
+        config["analog_error"] = options.analog_configs[i].analog_error;
+        config["linearity"] = options.analog_configs[i].linearity;
+        config["analog_snapping"] = options.analog_configs[i].analog_snapping;
 
-        direction["angle"] = analogOptions.analog_directions_2[i].angle;
-        direction["snap_margin"] = analogOptions.analog_directions_2[i].snap_margin;
-        direction["activation"] = analogOptions.analog_directions_2[i].activation;
-        direction["release"] = analogOptions.analog_directions_2[i].release;
+        JsonArray snap_directions = config.createNestedArray("snap_directions");
+        for (int j=0; j<options.analog_configs[i].snap_directions_count; j++) {
+            if (!options.analog_configs[i].snap_directions[j].enabled) {
+                continue;
+            }
+            JsonObject direction = snap_directions.createNestedObject();
+
+            direction["angle"] = options.analog_configs[i].snap_directions[j].angle;
+            direction["snap_margin"] = options.analog_configs[i].snap_directions[j].snap_margin;
+            direction["activation"] = options.analog_configs[i].snap_directions[j].activation;
+            direction["release"] = options.analog_configs[i].snap_directions[j].release;
+        }
+       
     }
-
-    writeDoc(doc, "analog_rotation_offset_1", analogOptions.analog_rotation_offset_1);
-    writeDoc(doc, "analog_rotation_offset_2", analogOptions.analog_rotation_offset_2);
 
     return serialize_json(doc);
 }
@@ -2910,8 +2883,8 @@ static const std::pair<const char*, HandlerFuncPtr> handlerFuncs[] =
     { "/api/getUsedPins", getUsedPins },
     { "/api/getConfig", getConfig },
     { "/api/getJoystickPosition", getJoystickPosition },
-    { "/api/setAnalogOptions", setAnalogOptions },
-    { "/api/getAnalogOptions", getAnalogOptions },
+    { "/api/setAnalogPlusOptions", setAnalogPlusOptions },
+    { "/api/getAnalogPlusOptions", getAnalogPlusOptions },
 #if !defined(NDEBUG)
     { "/api/echo", echo },
 #endif
