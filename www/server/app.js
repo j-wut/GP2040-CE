@@ -593,13 +593,13 @@ app.post('/api/getJoystickPosition', (req, res) => {
 	});
 });
 
-app.post('/api/setAnalogPlusSettings', (req, res) => {
+app.post('/api/setAnalogPlusOptions', (req, res) => {
 	return res.send(
 		req.body
 	);
 });
 
-app.get('/api/getAnalogPlusSettings', (req, res) => {
+app.get('/api/getAnalogPlusOptions', (req, res) => {
 	return res.send(
 		{
 			enabled: true,

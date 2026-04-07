@@ -124,7 +124,7 @@ const AnalogPlus = ({  }: AddonPropTypes) => {
 
 
 	useEffect(()=>{
-		WebApi.getAnalogPlusSettings().then(
+		WebApi.getAnalogPlusOptions().then(
 			setAnalogPlusOptions
 		)
 	}, [])
