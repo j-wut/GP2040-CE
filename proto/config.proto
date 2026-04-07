@@ -407,7 +407,7 @@ message AnalogPlusOptions
 
 message AnalogPlusConfig
 {    
-	optional AnalogMode analog_mode = 1;
+	optional DpadMode analog_mode = 1;
 	optional bool use_mux = 2;
 	optional int32 channel_x = 3;
     optional int32 channel_y = 4;
@@ -423,7 +423,8 @@ message AnalogPlusConfig
     optional float smoothing_factor = 14;
     optional uint32 analog_error = 15;
     optional float linearity = 16;
-    optional AnalogSnapDirection snap_directions = 17 [(nanopb).max_count = 16];
+    optional bool analog_snapping = 17;
+    optional AnalogSnapDirection snap_directions = 18 [(nanopb).max_count = 16];
 }
 
 message AnalogCalibrationPoint

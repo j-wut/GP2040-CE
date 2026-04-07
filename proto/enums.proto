@@ -707,10 +707,3 @@ enum MouseMovementMode
     MOUSE_MOVEMENT_LEFT_ANALOG = 1;
     MOUSE_MOVEMENT_RIGHT_ANALOG = 2;
 };
-
-enum AnalogMode
-{
-	DISABLED = 0;
-    LEFT_ANALOG = 1;
-    RIGHT_ANALOG = 2;
-};

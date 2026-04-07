@@ -68,7 +68,7 @@ void AnalogPlusInput::setup() {
                 joystick_state[i].cx = adc_read();
             } else {
                 // if auto calibration is disabled, use middle as Center
-                joystick_state[i].cx = ADC_MAX >> 1;
+                joystick_state[i].cx = ADC_MAX / 2;
             }
         }
         if(isValidPin(options.analog_configs[i].pin_y)) {
@@ -81,7 +81,7 @@ void AnalogPlusInput::setup() {
                 options.analog_configs[i].cy = adc_read();
             } else {
                 // if auto calibration is disabled, use middle as Center
-                options.analog_configs[i].cy = ADC_MAX >> 1;
+                options.analog_configs[i].cy = ADC_MAX / 2;
             }
         }
     }
@@ -99,87 +99,127 @@ void AnalogPlusInput::process() {
 
     for(int i = 0; i < ANALOG_PLUS_COUNT; i++) {
         // Read X-Axis
-        if (options.analog_configs[i].analog_mode != AnalogMode.DISABLED && 
-            isValidPin(options.analog_configs[i].pin_x &&
+        if (isValidPin(options.analog_configs[i].pin_x &&
             isValidPin(options.analog_configs[i].pin_y))) {
 
-                // Read ADC values
-                readXY(i);
+            // Read ADC values
+            readXY(i);
 
-                // Preprocessing Input Cleaning
-                if (options.analog_configs[i].analog_invert == InvertMode::INVERT_X || 
-                    options.analog_configs[i].analog_invert == InvertMode::INVERT_XY) {
-                    joystick_state[i].x_reading = ADC_MAX - joystick_state[i].x_reading;
+            // Preprocessing Input Cleaning
+            if (options.analog_configs[i].analog_invert == InvertMode::INVERT_X || 
+                options.analog_configs[i].analog_invert == InvertMode::INVERT_XY) {
+                joystick_state[i].x_reading = ADC_MAX - joystick_state[i].x_reading;
+            }
+            if (options.analog_configs[i].analog_invert == InvertMode::INVERT_Y || 
+                options.analog_configs[i].analog_invert == InvertMode::INVERT_XY) {
+                joystick_state[i].y_reading = ADC_MAX - joystick_state[i].y_reading;
+            }
+
+            if (options.analog_configs[i].analog_smoothing) {
+                joystick_state[i].x_reading = emaCalculation(i, joystick_state[i].x_reading, joystick_state[i].x_ema);
+                joystick_state[i].x_ema = joystick_state[i].x_reading;
+                
+                joystick_state[i].y_reading = emaCalculation(i, joystick_state[i].y_reading, joystick_state[i].y_ema);
+                joystick_state[i].y_ema = joystick_state[i].y_reading;
+            }
+
+            // Apply Calibrations
+            if (!options.analog_configs[i].auto_calibrate) {
+                applyCalibration(i);
+            } else {
+                // If auto_calibrating map cx and cy to ADC_MAX/2
+                if (joystick_state[i].x_reading > joystick_state[i].cx) {
+                    joystick_state[i].x_reading = map(joystick_state[i].x_reading, joystick_state[i].cx, ADC_MAX, ADC_MAX / 2, ADC_MAX);
+                } else if (joystick_state[i].x_reading == joystick_state[i].cx) {
+                    joystick_state[i].x_reading = ADC_MAX / 2;
+                } else {
+                    joystick_state[i].x_reading = map(joystick_state[i].x_reading, 0, joystick_state[i].cx, 0, ADC_MAX / 2);
                 }
-                if (options.analog_configs[i].analog_invert == InvertMode::INVERT_Y || 
-                    options.analog_configs[i].analog_invert == InvertMode::INVERT_XY) {
-                    joystick_state[i].y_reading = ADC_MAX - joystick_state[i].y_reading;
+                
+                if (joystick_state[i].y_reading > joystick_state[i].cy) {
+                    joystick_state[i].y_reading = map(joystick_state[i].y_reading, joystick_state[i].cy, ADC_MAX, ADC_MAX / 2, ADC_MAX);
+                } else if (joystick_state[i].y_reading == joystick_state[i].cy) {
+                    joystick_state[i].y_reading = ADC_MAX / 2;
+                } else {
+                    joystick_state[i].y_reading = map(joystick_state[i].y_reading, 0, joystick_state[i].cy, 0, ADC_MAX / 2);
                 }
+            }
 
-                if (options.analog_configs[i].analog_smoothing) {
-                    joystick_state[i].x_reading = emaCalculation(i, joystick_state[i].x_reading, joystick_state[i].x_ema);
-                    joystick_state[i].x_ema = joystick_state[i].x_reading;
-                    
-                    joystick_state[i].y_reading = emaCalculation(i, joystick_state[i].y_reading, joystick_state[i].y_ema);
-                    joystick_state[i].y_ema = joystick_state[i].y_reading;
+            // Calculate XY Magnitude and angle
+            calculatePolar(i);
+
+            // Apply Angles
+            if (!!options.analog_configs[i].linearity) {
+                correctLinearity(i);
+            }
+
+            // Apply Angle Snapping
+            if (options.analog_configs[i].analog_snapping) {
+                snapToDirection(i);
+            }
+
+            // Apply Deadzones
+            if (!!options.analog_configs[i].inner_deadzone) {
+                if (options.analog_configs[i].forced_circularity) {
+                    joystick_state[i].xy_magnitude = std::min(joystick_state[i].xy_magnitude, ADC_MAX/2)
                 }
+                float ratio = joystick_state[i].xy_magnitude / (ADC_MAX/2) * 100;
+                if (ratio < options.analog_configs[i].inner_deadzone) {
+                    joystick_state[i].xy_magnitude = 0f;
+                }
+            }
 
-                // Apply Calibrations
+            float x_ratio = std::cos(joystick_state[i].xy_radians) * joystick_state[i].xy_magnitude / ADC_MAX / 2;
+            float y_ratio = std::sin(joystick_state[i].xy_radians) * joystick_state[i].xy_magnitude / ADC_MAX / 2;
 
+            // If MID is 0x8000, clamp our max to 0xFFFF incase we are at 0x10000. 0x7FFF will max at 0xFFFE
+            uint16_t clampedX = (uint16_t)std::clamp((uint32_t)(joystickMid + joystickMid * x_ratio), (uint32_t)0x0, (uint32_t)0xFFFF);
+            uint16_t clampedY = (uint16_t)std::clamp((uint32_t)(joystickMid + joystickMid * y_ratio), (uint32_t)0x0, (uint32_t)0xFFFF);
 
-
-                // Apply Angle Snapping
-
-
-
-                // Apply Deadzones / Circularity / rapid trigger
-
-                // Clamp
-
-                // Set Gamepad state
-
-
-
-
-
-
-
-        }
-
-        // Look for dead-zones and circularity
-        options.analog_configs[i].xy_magnitude = magnitudeCalculation(i, options.analog_configs[i]);
-        setRadianDirection(options.analog_configs[i]);
-
-        if (options.analog_configs[i].linearity) {
-            correctLinearity(options.analog_configs[i]);
-        }
-
-        if (options.analog_configs[i].angle_snapping) {
-            snapToDirection(options.analog_configs[i]);
-        }
-
-        options.analog_configs[i].x_magnitude = std::cos(options.analog_configs[i].xy_radians) * options.analog_configs[i].xy_magnitude;
-        options.analog_configs[i].y_magnitude = std::sin(options.analog_configs[i].xy_radians) * options.analog_configs[i].xy_magnitude;
-
-        if (options.analog_configs[i].xy_magnitude < options.analog_configs[i].in_deadzone) {
-            options.analog_configs[i].x_value = ANALOG_CENTER;
-            options.analog_configs[i].y_value = ANALOG_CENTER;
-        } else {
-            radialDeadzone(i, options.analog_configs[i]);
-        }
-
-        // If MID is 0x8000, clamp our max to 0xFFFF incase we are at 0x10000. 0x7FFF will max at 0xFFFE
-        uint16_t clampedX = (uint16_t)std::min((uint32_t)(joystickMax * std::min(options.analog_configs[i].x_value, 1.0f)), (uint32_t)0xFFFF);
-        uint16_t clampedY = (uint16_t)std::min((uint32_t)(joystickMax * std::min(options.analog_configs[i].y_value, 1.0f)), (uint32_t)0xFFFF);
-
-        if (options.analog_configs[i].analog_dpad == DpadMode::DPAD_MODE_LEFT_ANALOG) {
-            gamepad->state.lx = clampedX;
-            gamepad->state.ly = clampedY;
-        } else if (options.analog_configs[i].analog_dpad == DpadMode::DPAD_MODE_RIGHT_ANALOG) {
-            gamepad->state.rx = clampedX;
-            gamepad->state.ry = clampedY;
+            if (options.analog_configs[i].analog_dpad == DpadMode::DPAD_MODE_LEFT_ANALOG) {
+                gamepad->state.lx = clampedX;
+                gamepad->state.ly = clampedY;
+            } else if (options.analog_configs[i].analog_dpad == DpadMode::DPAD_MODE_RIGHT_ANALOG) {
+                gamepad->state.rx = clampedX;
+                gamepad->state.ry = clampedY;
+            }
         }
     }
+}
+
+//Return diff of 2 radian angles. range from (-M_PI, M_PI)
+float AnalogPlusInput::radianDiff(float angle1, float angle2) {
+    float diff = joystick_state[i].xy_radians - joystick_state[i].prev_xy_radians;
+    while (diff > M_PI) {
+        diff -= 2 * M_PI;
+    }
+    while (diff < -M_PI) {
+        diff += 2 * M_PI;
+    }
+    return diff;
+}
+
+void AnalogPlusInput::selectChannel(uint8_t channel) {
+    for(int i = 0; i < selectPins; i++) {
+        if ( selectPinArray[i] != -1 ) {
+            gpio_put(selectPinArray[i], (channel >> i) & 0x01);
+        }   
+    }
+}
+
+void AnalogPlusInput::readXY(int joystick) {
+    if (options.analog_config[joystick].use_mux) {
+        selectChannel(options.analog_config[joystick].channel_x)
+    }
+    adc_select_input(options.analog_config[joystick].pin_x - ADC_PIN_OFFSET);
+    joystick_state[joystick].x_reading = adc_read();
+
+    if (options.analog_config[joystick].use_mux) {
+        selectChannel(options.analog_config[joystick].channel_y)
+    }
+    adc_select_input(options.analog_config[joystick].pin_y - ADC_PIN_OFFSET);
+    joystick_state[joystick].y_reading = adc_read();
+
 }
 
 void AnalogPlusInput::applyCalibration(int joystick) {
@@ -219,79 +259,45 @@ void AnalogPlusInput::applyCalibration(int joystick) {
     joystick_state[joystick].y_reading = result_y;
 }
 
-
-void AnalogPlusInput::selectChannel(uint8_t channel) {
-    for(int i = 0; i < selectPins; i++) {
-        if ( selectPinArray[i] != -1 ) {
-            gpio_put(selectPinArray[i], (channel >> i) & 0x01);
-        }   
-    }
-}
-
-void AnalogPlusInput::readXY(int joystick) {
-    if (options.analog_config[joystick].use_mux) {
-        selectChannel(options.analog_config[joystick].channel_x)
-    }
-    adc_select_input(options.analog_config[joystick].pin_x - ADC_PIN_OFFSET);
-    joystick_state[joystick].x_reading = adc_read();
-
-    if (options.analog_config[joystick].use_mux) {
-        selectChannel(options.analog_config[joystick].channel_y)
-    }
-    adc_select_input(options.analog_config[joystick].pin_y - ADC_PIN_OFFSET);
-    joystick_state[joystick].y_reading = adc_read();
-
+uint16_t AnalogPlusInput::map(uint16_t x, uint16_t in_min, uint16_t in_max, uint16_t out_min, uint16_t out_max) {
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
 float AnalogPlusInput::emaCalculation(int stick_num, float ema_value, float ema_previous) {
     return (options.analog_configs[stick_num].smoothing_factor * ema_value) + ((1.0f - options.analog_configs[stick_num].smoothing_factor) * ema_previous);
 }
 
-uint16_t AnalogPlusInput::map(uint16_t x, uint16_t in_min, uint16_t in_max, uint16_t out_min, uint16_t out_max) {
-    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-}
+void AnalogPlusInput::calculatePolar(int joystick) {
+    float x_magnitude = joystick_state[joystick].x_reading - ADC_MAX / 2;
+    float y_magnitude = joystick_state[joystick].y_reading - ADC_MAX / 2;
 
-float AnalogPlusInput::magnitudeCalculation(int stick_num, adc_instance & adc_inst) {
-    adc_inst.x_magnitude = adc_inst.x_value - ANALOG_CENTER;
-    adc_inst.y_magnitude = adc_inst.y_value - ANALOG_CENTER;
-    return options.analog_configs[stick_num].error_rate * std::sqrt((adc_inst.x_magnitude * adc_inst.x_magnitude) + (adc_inst.y_magnitude * adc_inst.y_magnitude));
-}
+    joystick_state[joystick].xy_magnitude =  std::sqrt((x_magnitude * x_magnitude) + (y_magnitude * y_magnitude));
 
-void AnalogPlusInput::setRadianDirection(adc_instance & adc_inst) {
-    // counter-clockwise from x axis
-    float angle = std::atan2(adc_inst.y_magnitude, adc_inst.x_magnitude) - adc_inst.angle_offset;
+    float angle = std::atan2(y_magnitude, x_magnitude) - adc_inst.angle_offset;
     if (angle < 0) {
         angle = angle + 2.0 * M_PI;
     }
-    adc_inst.xy_radians = angle ;
+    joystick_state[joystick] = angle;
 }
 
-void AnalogPlusInput::correctLinearity(adc_instance & adc_inst) {
-    float diff = adc_inst.xy_radians - adc_inst.prev_xy_radians;
-    while (diff < - M_PI){
-        diff = diff + 2.0 * M_PI;
-    }
-    while (diff > M_PI) {
-        diff = diff - 2.0 * M_PI;
-    }
-    if (std::abs(diff) > adc_inst.linearityMargin) {
-        adc_inst.prev_xy_radians = adc_inst.xy_radians;
+void AnalogPlusInput::correctLinearity(int joystick) {
+    float diff = radianDiff(joystick_state[i].xy_radians, joystick_state[i].prev_xy_radians)
+    if (std::abs(abs) < std::abs(options.analog_configs[i].linearity)) {
+        joystick_state[i].xy_radians = joystick_state[i].prev_xy_radians;
     } else {
-        adc_inst.xy_radians = adc_inst.prev_xy_radians;
+        joystick_state[i].prev_xy_radians = joystick_state[i].xy_radians;
     }
 }
 
-void AnalogPlusInput::snapToDirection(adc_instance & adc_inst) {
-    for (int i=0; i< adc_inst.snap_direction_count; i++) {
-        float diff = adc_inst.xy_radians - adc_inst.snap_directions[i].angle;
-        while (diff < - M_PI){
-            diff = diff + 2.0 * M_PI;
+void AnalogPlusInput::snapToDirection(int joystick) {
+    for (int i=0; i < ANALOG_PLUS_SNAP_DIRECTION_COUNT_MAX; i++) {
+        AnalogSnapDirection direction = options.analog_configs[joystick].snap_directions[i];
+        if(!direction.enabled) {
+            continue;
         }
-        while (diff > M_PI) {
-            diff = diff - 2.0 * M_PI;
-        }
-        if (std::abs(diff) < adc_inst.snap_directions[i].snap_margin) {
-            adc_inst.xy_radians = adc_inst.snap_directions[i].angle;
+        float diff = radianDiff(joystick_state[joystick].xy_radians, direction.angle)
+        if (std::abs(diff) < std::abs(direction.snap_margin)) {
+            adc_inst.xy_radians = direction.angle;
             return;
         }
     }

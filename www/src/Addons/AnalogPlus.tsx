@@ -46,13 +46,14 @@ export const analogPlusDefaultState: AnalogPlusOptions = {
 	mux_channels: 0,
 	select_pins: [],
 	
-	analogOptions: [{
+	analog_configs: [{
 		analog_mode: AnalogMode.DISABLED,
 		pin_x: 0,
 		pin_y: 0,
 		invert_mode: AnalogInvertMode.NONE,
 		forced_circularity: false,
 		inner_deadzone: 0,
+		outer_deadzone: 95,
 		auto_calibrate: false,
 		calibration_points: [],
 		analog_smoothing: false,
@@ -71,6 +72,7 @@ export const analogPlusDefaultState: AnalogPlusOptions = {
 		invert_mode: AnalogInvertMode.NONE,
 		forced_circularity: false,
 		inner_deadzone: 0,
+		outer_deadzone: 95,
 		auto_calibrate: false,
 		calibration_points: [],
 		analog_smoothing: false,
