@@ -422,7 +422,7 @@ message AnalogPlusConfig
     optional float smoothing_factor = 13;
     optional uint32 analog_error = 14;
     optional float linearity = 15;
-    optional bool analog_snapping = 16;
+    optional bool angle_snapping = 16;
     repeated AnalogSnapDirection snap_directions = 17 [(nanopb).max_count = 16];
 }
 

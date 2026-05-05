@@ -2727,7 +2727,7 @@ std::string setAnalogPlusOptions()
         options.analog_configs[i].smoothing_factor = config["smoothing_factor"];
         options.analog_configs[i].analog_error = config["analog_error"];
         options.analog_configs[i].linearity = config["linearity"];
-        options.analog_configs[i].analog_snapping = config["analog_snapping"];
+        options.analog_configs[i].angle_snapping = config["angle_snapping"];
         
         JsonArray snap_directions = config["snap_directions"];
         j=0;
@@ -2797,7 +2797,7 @@ std::string getAnalogPlusOptions()
         config["smoothing_factor"] = options.analog_configs[i].smoothing_factor;
         config["analog_error"] = options.analog_configs[i].analog_error;
         config["linearity"] = options.analog_configs[i].linearity;
-        config["analog_snapping"] = options.analog_configs[i].analog_snapping;
+        config["angle_snapping"] = options.analog_configs[i].angle_snapping;
 
         JsonArray snap_directions = config.createNestedArray("snap_directions");
         for (int j=0; j<options.analog_configs[i].snap_directions_count; j++) {

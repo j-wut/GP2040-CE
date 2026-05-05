@@ -180,7 +180,7 @@ void AnalogPlusInput::process() {
             }
 
             // Apply Angle Snapping
-            if (options->analog_configs[i].analog_snapping) {
+            if (options->analog_configs[i].angle_snapping) {
                 snapToDirection(i);
             }
 
