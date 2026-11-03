@@ -652,6 +652,19 @@ async function getLightsPresets(profileIndex) {
 	}
 }
 
+async function getKeyMatrixOptions() {
+	try {
+		const response = await Http.get(`${baseUrl}/api/getKeyMatrixOptions`);
+		return response.data;
+	} catch (error) {
+		console.error(error);
+	}
+}
+
+async function setKeyMatrixOptions(options) {
+	return Http.post(`${baseUrl}/api/setKeyMatrixOptions`, options);
+}
+
 async function setExpansionPins(mappings) {
 	console.dir(mappings);
 
@@ -782,6 +795,8 @@ export default {
 	getLightsPresets,
 	getExpansionPins,
 	setExpansionPins,
+	getKeyMatrixOptions,
+	setKeyMatrixOptions,
 	getHETriggerVoltage,
 	setHETriggerCalibrations,
 	getHETriggerCalibrations,

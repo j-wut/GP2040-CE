@@ -12,6 +12,7 @@
 #include "addonmanager.h"
 #include "types.h"
 #include "usbhostmanager.h"
+#include "keymatrix.h"
 
 // Inputs for Core0
 #include "addons/analog.h"
@@ -59,6 +60,9 @@ static absolute_time_t rebootDelayTimeout = nil_time;
 
 void GP2040::setup() {
 	Storage::getInstance().init();
+
+	// Keyboard-style switch matrix (its row/column pins are reserved as addon pins)
+	KeyMatrix::getInstance().setup(Storage::getInstance().getAddonOptions().keyMatrixOptions);
 
 	PeripheralManager::getInstance().initUSB();
 
@@ -170,15 +174,20 @@ void GP2040::setup() {
  */
 void GP2040::initializeStandardGpio() {
 	GpioMappingInfo* pinMappings = Storage::getInstance().getProfilePinMappings();
+	const KeyMatrix& matrix = KeyMatrix::getInstance();
 	buttonGpios = 0;
-	for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+	for (Pin_t pin = 0; pin < (Pin_t)NUM_INPUT_PINS; pin++)
 	{
 		// (NONE=-10, RESERVED=-5, ASSIGNED_TO_ADDON=0, everything else is ours)
 		if (pinMappings[pin].action > 0)
 		{
-			gpio_init(pin);             // Initialize pin
-			gpio_set_dir(pin, GPIO_IN); // Set as INPUT
-			gpio_pull_up(pin);          // Set as PULLUP
+			// keyboard matrix switches have no GPIO of their own (their pin may be a
+			// matrix row/column wire), but are debounced like any other button
+			if (pin < (Pin_t)NUM_BANK0_GPIOS && !matrix.ownsGpio(pin)) {
+				gpio_init(pin);             // Initialize pin
+				gpio_set_dir(pin, GPIO_IN); // Set as INPUT
+				gpio_pull_up(pin);          // Set as PULLUP
+			}
 			buttonGpios |= Mask_t{1} << pin;    // mark this pin as mattering for GPIO debouncing
 		}
 	}
@@ -189,10 +198,11 @@ void GP2040::initializeStandardGpio() {
  */
 void GP2040::deinitializeStandardGpio() {
 	GpioMappingInfo* pinMappings = Storage::getInstance().getProfilePinMappings();
+	const KeyMatrix& matrix = KeyMatrix::getInstance();
 	for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
 	{
 		// (NONE=-10, RESERVED=-5, ASSIGNED_TO_ADDON=0, everything else is ours)
-		if (pinMappings[pin].action > 0)
+		if (pinMappings[pin].action > 0 && !matrix.ownsGpio(pin))
 		{
 			gpio_deinit(pin);
 		}
@@ -210,6 +220,7 @@ void GP2040::deinitializeStandardGpio() {
  * instead, if you don't want debounced data.
  */
 void GP2040::debounceGpioGetAll() {
+	KeyMatrix::getInstance().scan();
 	Mask_t rawGpios = Storage::getInstance().getPressedGpios();
 	Mask_t pressedGpios = rawGpios & buttonGpios;
 	Gamepad* gamepad = Storage::getInstance().GetGamepad();
@@ -462,6 +473,7 @@ GP2040::BootAction GP2040::getGpioMappedBootAction() {
 		default:
 			break;
 	}
+	KeyMatrix::getInstance().scan();
 	Mask_t gpio = Storage::getInstance().getPressedGpios() & buttonGpios;
 
 	if (gpio == bootModeOptions.usbModePinMask) {

@@ -16,7 +16,7 @@ bool SliderSOCDInput::available() {
 void SliderSOCDInput::setup()
 {
     GpioMappingInfo* pinMappings = Storage::getInstance().getProfilePinMappings();
-    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+    for (Pin_t pin = 0; pin < (Pin_t)NUM_INPUT_PINS; pin++)
     {
         switch (pinMappings[pin].action) {
             case SUSTAIN_SOCD_MODE_UP_PRIO:     upPrioModeMask |= Mask_t{1} << pin; break;

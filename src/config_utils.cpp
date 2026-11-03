@@ -39,6 +39,7 @@
 #include "addons/gamepad_usb_host.h"
 #include "addons/he_trigger.h"
 #include "addons/tg16_input.h"
+#include "keymatrix.h"
 
 #include "CRC32.h"
 #include "FlashPROM.h"
@@ -1489,6 +1490,34 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin1, TG16_PAD_DATA_PIN1);
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin2, TG16_PAD_DATA_PIN2);
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin3, TG16_PAD_DATA_PIN3);
+
+    // addonOptions.keyMatrixOptions
+    {
+        KeyMatrixOptions& matrix = config.addonOptions.keyMatrixOptions;
+        if (!matrix.has_enabled) {
+            const int32_t rowPins[] = { KEY_MATRIX_ROW_PINS };
+            const int32_t colPins[] = { KEY_MATRIX_COL_PINS };
+            matrix.rowPins_count = 0;
+            matrix.colPins_count = 0;
+            for (int32_t pin : rowPins) {
+                if (isValidPin(pin) && matrix.rowPins_count < std::size(matrix.rowPins))
+                    matrix.rowPins[matrix.rowPins_count++] = pin;
+            }
+            for (int32_t pin : colPins) {
+                if (isValidPin(pin) && matrix.colPins_count < std::size(matrix.colPins))
+                    matrix.colPins[matrix.colPins_count++] = pin;
+            }
+        }
+        INIT_UNSET_PROPERTY(matrix, enabled, !!KEY_MATRIX_ENABLED);
+        INIT_UNSET_PROPERTY(matrix, settleMicros, KEY_MATRIX_SETTLE_MICROS);
+
+        // fill in any switch that has no stored action yet
+        const GpioAction pinActions[] = { KEY_MATRIX_PIN_ACTIONS };
+        for (pb_size_t i = matrix.pinActions_count; i < std::size(matrix.pinActions); i++) {
+            matrix.pinActions[i] = i < std::size(pinActions) ? pinActions[i] : GpioAction::NONE;
+        }
+        matrix.pinActions_count = std::size(matrix.pinActions);
+    }
 }
 
 
@@ -1989,6 +2018,27 @@ void gpioMappingsMigrationCore(Config& config)
     config.migrations.gpioMappingsMigrated = true;
 }
 
+// keyboard matrix row/column GPIOs belong to the matrix, never to a button mapping
+void reserveKeyMatrixPins(Config& config)
+{
+    const KeyMatrixOptions& matrix = config.addonOptions.keyMatrixOptions;
+    if (!matrix.enabled)
+        return;
+
+    const auto reserve = [&](int32_t pin) -> void {
+        if (!isValidPin(pin))
+            return;
+        if (pin < (int32_t)config.gpioMappings.pins_count)
+            config.gpioMappings.pins[pin].action = GpioAction::ASSIGNED_TO_ADDON;
+        for (pb_size_t i = 0; i < config.profileOptions.gpioMappingsSets_count; i++) {
+            if (pin < (int32_t)config.profileOptions.gpioMappingsSets[i].pins_count)
+                config.profileOptions.gpioMappingsSets[i].pins[pin].action = GpioAction::ASSIGNED_TO_ADDON;
+        }
+    };
+    for (pb_size_t i = 0; i < matrix.rowPins_count; i++) reserve(matrix.rowPins[i]);
+    for (pb_size_t i = 0; i < matrix.colPins_count; i++) reserve(matrix.colPins[i]);
+}
+
 // if the user previously had the JS slider addon enabled, copy its default to the
 // core gamepad setting, since the functionality is within the core now
 void migrateJSliderToCore(Config& config)
@@ -2346,6 +2396,8 @@ void ConfigUtils::load(Config& config)
     migrateMacroPinsToGpio(config);
     // Migrate old JS slider add-on to core
     migrateJSliderToCore(config);
+    // Keep keyboard matrix pins out of the button mappings
+    reserveKeyMatrixPins(config);
 
     // Update boardVersion, in case we migrated from an older version
     strncpy(config.boardVersion, GP2040VERSION, sizeof(config.boardVersion));
@@ -2991,6 +3043,7 @@ bool ConfigUtils::fromJSON(Config& config, const char* data, size_t dataLen)
     migrateTurboPinToGpio(config);
     migrateAuthenticationMethods(config);
     migrateMacroPinsToGpio(config);
+    reserveKeyMatrixPins(config);
 
     return true;
 }

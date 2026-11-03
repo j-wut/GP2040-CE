@@ -26,7 +26,7 @@ bool hasDigitalAxisMappings() {
     Storage &storage = Storage::getInstance();
     GpioMappingInfo const *pinMappings = storage.getProfilePinMappings();
     bool dualDirectionalMapped = false;
-    for (Pin_t pin = 0; pin < static_cast<Pin_t>(NUM_BANK0_GPIOS); ++pin) {
+    for (Pin_t pin = 0; pin < static_cast<Pin_t>(NUM_INPUT_PINS); ++pin) {
         GpioAction const action = pinMappings[pin].action;
         dualDirectionalMapped |= action == BUTTON_PRESS_DDI_UP || action == BUTTON_PRESS_DDI_DOWN ||
             action == BUTTON_PRESS_DDI_LEFT || action == BUTTON_PRESS_DDI_RIGHT;

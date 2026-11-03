@@ -97,7 +97,7 @@ void TiltInput::reloadMappings() {
 	mapAnalogModHigh->pinMask = 0;
 
 	GpioMappingInfo* pinMappings = Storage::getInstance().getProfilePinMappings();
-	for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+	for (Pin_t pin = 0; pin < (Pin_t)NUM_INPUT_PINS; pin++)
 	{
 		switch (pinMappings[pin].action) {
 			case GpioAction::ANALOG_DIRECTION_LS_X_NEG:	mapAnalogLSXNeg->pinMask |= Mask_t{1} << pin; break;

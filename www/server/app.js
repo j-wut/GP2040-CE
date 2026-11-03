@@ -936,6 +936,59 @@ app.get('/api/getLightsPresets/5', (req, res) => res.send({}));
 app.get('/api/getLightsPresets/6', (req, res) => res.send({}));
 app.get('/api/getLightsPresets/7', (req, res) => res.send({}));
 
+app.get('/api/getKeyMatrixOptions', (req, res) => {
+	return res.send({
+		enabled: true,
+		settleMicros: 10,
+		firstVirtualPin: 30,
+		rowPins: [16, 17, 18, 19, 21, 22],
+		colPins: [5, 6, 7, 8, 9, 10, 11, 12],
+		pinActions: [
+			11,
+			12,
+			6,
+			5,
+			9,
+			10,
+			8,
+			7,
+			3,
+			4,
+			2,
+			1,
+			17,
+			18,
+			41,
+			42,
+			...Array(48).fill(-10),
+		],
+		switchPins: [
+			5,
+			6,
+			7,
+			8,
+			9,
+			10,
+			11,
+			12,
+			16,
+			17,
+			18,
+			19,
+			21,
+			22,
+			...Array(34)
+				.fill(0)
+				.map((_, i) => 30 + i),
+		],
+	});
+});
+
+app.post('/api/setKeyMatrixOptions', (req, res) => {
+	console.log(req.body);
+	return res.send(req.body);
+});
+
 app.get('/api/getExpansionPins', (req, res) => {
 	return res.send({
 		pins: {

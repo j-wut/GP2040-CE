@@ -189,7 +189,7 @@ void DisplayAddon::setMenuMappings()
     mapMenuToggle = new GamepadButtonMapping(0);
     mapMenuSelect = new GamepadButtonMapping(0);
     GpioMappingInfo* pinMappings = Storage::getInstance().getProfilePinMappings();
-    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++) {
+    for (Pin_t pin = 0; pin < (Pin_t)NUM_INPUT_PINS; pin++) {
         switch (pinMappings[pin].action) {
             case GpioAction::MENU_NAVIGATION_TOGGLE: mapMenuToggle->pinMask |= Mask_t{1} << pin; break;
             case GpioAction::MENU_NAVIGATION_SELECT: mapMenuSelect->pinMask |= Mask_t{1} << pin; break;

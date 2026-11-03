@@ -37,6 +37,7 @@
 #include "lwip/def.h"
 #include "lwip/mem.h"
 #include "addons/input_macro.h"
+#include "keymatrix.h"
 
 #define PATH_CGI_ACTION "/cgi/action"
 
@@ -1984,6 +1985,104 @@ std::string setExpansionPins()
     return serialize_json(doc);
 }
 
+std::string getKeyMatrixOptions()
+{
+    const KeyMatrixOptions& matrix = Storage::getInstance().getAddonOptions().keyMatrixOptions;
+    const KeyMatrix& keyMatrix = KeyMatrix::getInstance();
+    DynamicJsonDocument doc(JSON_OBJECT_SIZE(8) + JSON_ARRAY_SIZE(KEY_MATRIX_MAX_ROWS) * 2
+        + JSON_ARRAY_SIZE(KEY_MATRIX_MAX_SWITCHES) * 2);
+
+    doc["enabled"] = matrix.enabled;
+    doc["settleMicros"] = matrix.settleMicros;
+    doc["firstVirtualPin"] = NUM_BANK0_GPIOS;
+    JsonArray rows = doc.createNestedArray("rowPins");
+    for (pb_size_t i = 0; i < matrix.rowPins_count; i++) rows.add(matrix.rowPins[i]);
+    JsonArray cols = doc.createNestedArray("colPins");
+    for (pb_size_t i = 0; i < matrix.colPins_count; i++) cols.add(matrix.colPins[i]);
+    JsonArray actions = doc.createNestedArray("pinActions");
+    for (pb_size_t i = 0; i < matrix.pinActions_count; i++) actions.add(matrix.pinActions[i]);
+    // input pin number of each switch in the running firmware (changes need a reboot)
+    JsonArray switchPins = doc.createNestedArray("switchPins");
+    for (uint32_t i = 0; i < keyMatrix.getSwitchCount(); i++) switchPins.add(keyMatrix.getSwitchPin(i));
+    return serialize_json(doc);
+}
+
+std::string setKeyMatrixOptions()
+{
+    DynamicJsonDocument doc = get_post_data();
+    KeyMatrixOptions& matrix = Storage::getInstance().getAddonOptions().keyMatrixOptions;
+    GpioMappingInfo* gpioMappings = Storage::getInstance().getGpioMappings().pins;
+
+    const auto isMatrixPin = [&](int32_t pin) -> bool {
+        for (pb_size_t i = 0; i < matrix.rowPins_count; i++) if (matrix.rowPins[i] == pin) return true;
+        for (pb_size_t i = 0; i < matrix.colPins_count; i++) if (matrix.colPins[i] == pin) return true;
+        return false;
+    };
+
+    // read and check the new row/column pins before changing anything
+    std::vector<int32_t> rowPins, colPins;
+    std::set<int32_t> newPins;
+    const auto readPins = [&](const char* key, std::vector<int32_t>& out, size_t maxCount) -> const char* {
+        for (JsonVariantConst value : doc[key].as<JsonArrayConst>()) {
+            int32_t pin = value.as<int32_t>();
+            if (!isValidPin(pin)) return "invalid pin";
+            if (!newPins.insert(pin).second) return "pin used twice";
+            // only button pins (or pins the matrix already owns) can become matrix pins
+            if (!isMatrixPin(pin) &&
+                (gpioMappings[pin].action == GpioAction::RESERVED ||
+                 gpioMappings[pin].action == GpioAction::ASSIGNED_TO_ADDON))
+                return "pin is used by another feature";
+            out.push_back(pin);
+        }
+        return out.size() > maxCount ? "too many pins" : nullptr;
+    };
+    const char* error = readPins("rowPins", rowPins, KEY_MATRIX_MAX_ROWS);
+    if (!error) error = readPins("colPins", colPins, KEY_MATRIX_MAX_COLS);
+    if (error) {
+        DynamicJsonDocument errorDoc(JSON_OBJECT_SIZE(1));
+        errorDoc["error"] = error;
+        return serialize_json(errorDoc);
+    }
+
+    docToValue(matrix.enabled, doc, "enabled");
+    docToValue(matrix.settleMicros, doc, "settleMicros");
+
+    // release pins the matrix no longer uses, then claim the new ones
+    const std::set<int32_t> claimedPins = matrix.enabled ? newPins : std::set<int32_t>();
+    for (pb_size_t i = 0; i < matrix.rowPins_count; i++) {
+        Pin_t pin = -1;
+        if (!claimedPins.count(matrix.rowPins[i])) cleanAddonGpioMappings(pin, matrix.rowPins[i]);
+    }
+    for (pb_size_t i = 0; i < matrix.colPins_count; i++) {
+        Pin_t pin = -1;
+        if (!claimedPins.count(matrix.colPins[i])) cleanAddonGpioMappings(pin, matrix.colPins[i]);
+    }
+    for (int32_t pin : claimedPins) {
+        Pin_t claimed = pin;
+        cleanAddonGpioMappings(claimed, -1);
+    }
+
+    matrix.rowPins_count = 0;
+    for (int32_t pin : rowPins) matrix.rowPins[matrix.rowPins_count++] = pin;
+    matrix.colPins_count = 0;
+    for (int32_t pin : colPins) matrix.colPins[matrix.colPins_count++] = pin;
+
+    pb_size_t i = 0;
+    for (JsonVariantConst value : doc["pinActions"].as<JsonArrayConst>()) {
+        if (i >= std::size(matrix.pinActions)) break;
+        GpioAction action = (GpioAction)value.as<int32_t>();
+        // switches are plain inputs; they can't be reserved or handed to an add-on
+        if (action == GpioAction::RESERVED || action == GpioAction::ASSIGNED_TO_ADDON)
+            action = GpioAction::NONE;
+        matrix.pinActions[i++] = action;
+    }
+    for (; i < std::size(matrix.pinActions); i++) matrix.pinActions[i] = GpioAction::NONE;
+    matrix.pinActions_count = std::size(matrix.pinActions);
+
+    EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
+    return serialize_json(doc);
+}
+
 static uint32_t calibrationMuxChannels = 0;
 static Pin_t calibrationSelectPins[4][4];
 static bool calibrationSeparateSelectPins = false;
@@ -3366,6 +3465,8 @@ static const std::pair<const char*, HandlerFuncPtr> handlerFuncs[] =
     { "/api/getI2CPeripheralMap", getI2CPeripheralMap },
     { "/api/setExpansionPins", setExpansionPins },
     { "/api/getExpansionPins", getExpansionPins },
+    { "/api/getKeyMatrixOptions", getKeyMatrixOptions },
+    { "/api/setKeyMatrixOptions", setKeyMatrixOptions },
     { "/api/setHETriggerCalibrations", setHETriggerCalibrations },
     { "/api/getHETriggerCalibrations", getHETriggerCalibrations },
     { "/api/getHETriggerVoltage", getHETriggerVoltage },

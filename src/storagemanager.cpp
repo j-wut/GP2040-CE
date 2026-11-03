@@ -123,7 +123,11 @@ void Storage::setInvertedPins(const GpioMappings& mappings)
 
 Mask_t Storage::getPressedGpios() const
 {
-	return ~gpio_get_all64() ^ invertedPins;
+	// real GPIOs are active low; matrix row/column GPIOs are wires, so their bits
+	// (and the bits above the real GPIOs) carry the matrix switches instead
+	const KeyMatrix& matrix = KeyMatrix::getInstance();
+	const Mask_t directPins = ((Mask_t{1} << NUM_BANK0_GPIOS) - 1) & ~matrix.getMatrixGpioMask();
+	return ((~gpio_get_all64() ^ invertedPins) & directPins) | matrix.getState();
 }
 
 void Storage::setFunctionalPinMappings()
@@ -156,7 +160,30 @@ void Storage::setFunctionalPinMappings()
 			functionalPinMappings[pin] = this->config.gpioMappings.pins[pin];
 		}
 	}
+	setVirtualPinMappings();
 	setInvertedPins(profile ? *profile : config.gpioMappings);
+}
+
+/**
+ * @brief keyboard matrix switches are input pins after the real GPIOs, shared by all profiles
+ */
+void Storage::setVirtualPinMappings()
+{
+	const KeyMatrixOptions& options = config.addonOptions.keyMatrixOptions;
+	const KeyMatrix& matrix = KeyMatrix::getInstance();
+
+	for (Pin_t pin = (Pin_t)NUM_BANK0_GPIOS; pin < (Pin_t)NUM_INPUT_PINS; pin++) {
+		functionalPinMappings[pin] = GpioMappingInfo GpioMappingInfo_init_zero;
+		functionalPinMappings[pin].action = GpioAction::NONE;
+	}
+	for (uint32_t i = 0; i < matrix.getSwitchCount(); i++) {
+		GpioMappingInfo& pinInfo = functionalPinMappings[matrix.getSwitchPin(i)];
+		pinInfo = GpioMappingInfo GpioMappingInfo_init_zero;
+		pinInfo.action = i < options.pinActions_count ? options.pinActions[i] : GpioAction::NONE;
+		// switches can't be reserved or handed to an add-on
+		if (pinInfo.action == GpioAction::RESERVED || pinInfo.action == GpioAction::ASSIGNED_TO_ADDON)
+			pinInfo.action = GpioAction::NONE;
+	}
 }
 
 /**
@@ -189,6 +216,10 @@ void Storage::setBootModeFunctionalPinMappings()
 			// Just setting an arbitrary non-zero action
 			functionalPinMappings[pin].action = GpioAction::BUTTON_PRESS_A1;
 		}
+	}
+	// boot mode combos only use real GPIOs
+	for (Pin_t pin = (Pin_t)NUM_BANK0_GPIOS; pin < (Pin_t)NUM_INPUT_PINS; pin++) {
+		functionalPinMappings[pin].action = GpioAction::NONE;
 	}
 	setInvertedPins(getGpioMappings());
 }

@@ -121,7 +121,7 @@ void PS3Driver::initialize() {
     }
 
     GpioMappingInfo* pinMappings = Storage::getInstance().getProfilePinMappings();
-    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++) {
+    for (Pin_t pin = 0; pin < (Pin_t)NUM_INPUT_PINS; pin++) {
         if (deviceType == InputModeDeviceType::INPUT_MODE_DEVICE_TYPE_GUITAR) {
             switch (pinMappings[pin].action) {
                 case GpioAction::MODE_GUITAR_FRET_GREEN: buttonFretGreen->pinMask |= Mask_t{1} << pin; break;

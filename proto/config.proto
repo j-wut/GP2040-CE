@@ -959,6 +959,16 @@ message HETriggerOptions
     repeated HETriggerMux muxes = 15 [(nanopb).max_count = 4];
 }
 
+message KeyMatrixOptions
+{
+    optional bool enabled = 1;
+    repeated int32 rowPins = 2 [(nanopb).max_count = 16];
+    repeated int32 colPins = 3 [(nanopb).max_count = 16];
+    optional uint32 settleMicros = 4;
+    // action for each matrix switch, row by row (see keymatrix.h for its input pin number)
+    repeated GpioAction pinActions = 5 [(nanopb).max_count = 64, packed = true];
+}
+
 message AddonOptions
 {
     optional BootselButtonOptions bootselButtonOptions = 1;
@@ -993,6 +1003,7 @@ message AddonOptions
     optional HETriggerOptions heTriggerOptions = 30;
     optional ProfileSliderOptions profileSliderOptions = 31;
     optional AnalogADS1115Options analogADS1115Options = 32;
+    optional KeyMatrixOptions keyMatrixOptions = 33;
 }
 
 message MigrationHistory

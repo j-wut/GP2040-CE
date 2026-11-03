@@ -22,7 +22,7 @@ void PinViewerScreen::drawScreen() {
 
     getRenderer()->drawText(2, 0, "[GPIO Pin Viewer]");
 
-    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++) {
+    for (Pin_t pin = 0; pin < (Pin_t)NUM_INPUT_PINS; pin++) {
         if ((pinMappings[pin].action > 0) && (pinMappings[pin].action != GpioAction::CUSTOM_BUTTON_COMBO)) {
             if ((pinValues >> pin) & 0x01) {
                 pinsPressed += std::to_string(pin);

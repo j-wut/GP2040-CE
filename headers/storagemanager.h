@@ -15,6 +15,7 @@
 #include "gamepad.h"
 
 #include "config.pb.h"
+#include "keymatrix.h"
 #include <atomic>
 #include "pico/critical_section.h"
 #include "eventmanager.h"
@@ -77,10 +78,11 @@ private:
 	Gamepad * processedGamepad = nullptr; // Gamepad with ONLY processed data
 	uint8_t featureData[32]; // USB X-Input Feature Data
 	Config config;
-	GpioMappingInfo functionalPinMappings[NUM_BANK0_GPIOS];
+	GpioMappingInfo functionalPinMappings[NUM_INPUT_PINS];
 	KeyboardMapping* activeKeyboardMapping = &config.keyboardMapping;
 	Mask_t invertedPins = 0;
 	void setInvertedPins(const GpioMappings& mappings);
+	void setVirtualPinMappings();
 	uint32_t systemFlashSize;
 };
 

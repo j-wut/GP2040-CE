@@ -62,6 +62,7 @@ import GamepadUSBHost, {
 } from '../Addons/GamepadUSBHost';
 import Rotary, { rotaryScheme, rotaryState } from '../Addons/Rotary';
 import PCF8575, { pcf8575Scheme, pcf8575State } from '../Addons/PCF8575';
+import KeyMatrix from '../Addons/KeyMatrix';
 import DRV8833Rumble, {
 	drv8833RumbleScheme,
 	drv8833RumbleState,
@@ -158,6 +159,7 @@ const ADDONS = [
 	GamepadUSBHost,
 	Rotary,
 	PCF8575,
+	KeyMatrix,
 	DRV8833Rumble,
 	ReactiveLED,
 	HETrigger,
