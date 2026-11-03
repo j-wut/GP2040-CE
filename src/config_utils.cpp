@@ -1513,10 +1513,14 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
 
         // fill in any switch that has no stored action yet
         const GpioAction pinActions[] = { KEY_MATRIX_PIN_ACTIONS };
-        for (pb_size_t i = matrix.pinActions_count; i < std::size(matrix.pinActions); i++) {
-            matrix.pinActions[i] = i < std::size(pinActions) ? pinActions[i] : GpioAction::NONE;
+        for (pb_size_t i = matrix.switchActions_count; i < std::size(matrix.switchActions); i++) {
+            GpioAction action = i < std::size(pinActions) ? pinActions[i] : GpioAction::NONE;
+            matrix.switchActions[i] = packSwitchAction(action, 0);
         }
-        matrix.pinActions_count = std::size(matrix.pinActions);
+        matrix.switchActions_count = std::size(matrix.switchActions);
+        for (pb_size_t i = matrix.switchButtonMasks_count; i < std::size(matrix.switchButtonMasks); i++)
+            matrix.switchButtonMasks[i] = 0;
+        matrix.switchButtonMasks_count = std::size(matrix.switchButtonMasks);
     }
 }
 

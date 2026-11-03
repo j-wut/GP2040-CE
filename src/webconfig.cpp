@@ -1990,7 +1990,7 @@ std::string getKeyMatrixOptions()
     const KeyMatrixOptions& matrix = Storage::getInstance().getAddonOptions().keyMatrixOptions;
     const KeyMatrix& keyMatrix = KeyMatrix::getInstance();
     DynamicJsonDocument doc(JSON_OBJECT_SIZE(8) + JSON_ARRAY_SIZE(KEY_MATRIX_MAX_ROWS) * 2
-        + JSON_ARRAY_SIZE(KEY_MATRIX_MAX_SWITCHES) * 2);
+        + JSON_ARRAY_SIZE(KEY_MATRIX_MAX_SWITCHES) * 2 + KEY_MATRIX_MAX_SWITCHES * JSON_OBJECT_SIZE(3));
 
     doc["enabled"] = matrix.enabled;
     doc["settleMicros"] = matrix.settleMicros;
@@ -1999,8 +1999,14 @@ std::string getKeyMatrixOptions()
     for (pb_size_t i = 0; i < matrix.rowPins_count; i++) rows.add(matrix.rowPins[i]);
     JsonArray cols = doc.createNestedArray("colPins");
     for (pb_size_t i = 0; i < matrix.colPins_count; i++) cols.add(matrix.colPins[i]);
-    JsonArray actions = doc.createNestedArray("pinActions");
-    for (pb_size_t i = 0; i < matrix.pinActions_count; i++) actions.add(matrix.pinActions[i]);
+    JsonArray mappings = doc.createNestedArray("switchMappings");
+    for (pb_size_t i = 0; i < matrix.switchActions_count && i < matrix.switchButtonMasks_count; i++) {
+        const GpioMappingInfo info = unpackSwitchMapping(matrix.switchActions[i], matrix.switchButtonMasks[i]);
+        JsonObject mapping = mappings.createNestedObject();
+        mapping["action"] = info.action;
+        mapping["customButtonMask"] = info.customButtonMask;
+        mapping["customDpadMask"] = info.customDpadMask;
+    }
     // input pin number of each switch in the running firmware (changes need a reboot)
     JsonArray switchPins = doc.createNestedArray("switchPins");
     for (uint32_t i = 0; i < keyMatrix.getSwitchCount(); i++) switchPins.add(keyMatrix.getSwitchPin(i));
@@ -2068,16 +2074,22 @@ std::string setKeyMatrixOptions()
     for (int32_t pin : colPins) matrix.colPins[matrix.colPins_count++] = pin;
 
     pb_size_t i = 0;
-    for (JsonVariantConst value : doc["pinActions"].as<JsonArrayConst>()) {
-        if (i >= std::size(matrix.pinActions)) break;
-        GpioAction action = (GpioAction)value.as<int32_t>();
+    for (JsonVariantConst value : doc["switchMappings"].as<JsonArrayConst>()) {
+        if (i >= std::size(matrix.switchActions)) break;
+        GpioAction action = (GpioAction)value["action"].as<int32_t>();
         // switches are plain inputs; they can't be reserved or handed to an add-on
         if (action == GpioAction::RESERVED || action == GpioAction::ASSIGNED_TO_ADDON)
             action = GpioAction::NONE;
-        matrix.pinActions[i++] = action;
+        matrix.switchActions[i] = packSwitchAction(action, value["customDpadMask"].as<uint32_t>());
+        matrix.switchButtonMasks[i] = value["customButtonMask"].as<uint32_t>();
+        i++;
     }
-    for (; i < std::size(matrix.pinActions); i++) matrix.pinActions[i] = GpioAction::NONE;
-    matrix.pinActions_count = std::size(matrix.pinActions);
+    for (; i < std::size(matrix.switchActions); i++) {
+        matrix.switchActions[i] = packSwitchAction(GpioAction::NONE, 0);
+        matrix.switchButtonMasks[i] = 0;
+    }
+    matrix.switchActions_count = std::size(matrix.switchActions);
+    matrix.switchButtonMasks_count = std::size(matrix.switchButtonMasks);
 
     EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
     return serialize_json(doc);

@@ -177,12 +177,9 @@ void Storage::setVirtualPinMappings()
 		functionalPinMappings[pin].action = GpioAction::NONE;
 	}
 	for (uint32_t i = 0; i < matrix.getSwitchCount(); i++) {
-		GpioMappingInfo& pinInfo = functionalPinMappings[matrix.getSwitchPin(i)];
-		pinInfo = GpioMappingInfo GpioMappingInfo_init_zero;
-		pinInfo.action = i < options.pinActions_count ? options.pinActions[i] : GpioAction::NONE;
-		// switches can't be reserved or handed to an add-on
-		if (pinInfo.action == GpioAction::RESERVED || pinInfo.action == GpioAction::ASSIGNED_TO_ADDON)
-			pinInfo.action = GpioAction::NONE;
+		functionalPinMappings[matrix.getSwitchPin(i)] = unpackSwitchMapping(
+			i < options.switchActions_count ? options.switchActions[i] : 0,
+			i < options.switchButtonMasks_count ? options.switchButtonMasks[i] : 0);
 	}
 }
 

@@ -27,7 +27,6 @@ import omit from 'lodash/omit';
 import { AppContext } from '../Contexts/AppContext';
 import useProfilesStore, {
 	getProfilePins,
-	MaskPayload,
 	MAX_PROFILES,
 } from '../Store/useProfilesStore';
 
@@ -35,97 +34,20 @@ import Section from '../Components/Section';
 import CustomSelect from '../Components/CustomSelect';
 import CaptureButton from '../Components/CaptureButton';
 
-import { BUTTON_MASKS, DPAD_MASKS, getButtonLabels } from '../Data/Buttons';
-import { BUTTON_ACTIONS, PinActionKeys, PinActionValues } from '../Data/Pins';
+import { getButtonLabels } from '../Data/Buttons';
+import { BUTTON_ACTIONS, PinActionKeys } from '../Data/Pins';
+import {
+	getMultiValue,
+	groupedOptions,
+	isDisabled,
+	OptionType,
+	selectionToMapping,
+} from '../Data/PinMappingOptions';
 import './PinMapping.scss';
 import { MultiValue, SingleValue } from 'react-select';
 import InfoCircle from '../Icons/InfoCircle';
 import WebApi from '../Services/WebApi';
 import useLedsPreview from '../Hooks/useLedsPreview';
-
-type OptionType = {
-	label: string;
-	value: PinActionValues;
-	type: string;
-	customButtonMask: number;
-	customDpadMask: number;
-};
-
-const disabledOptions = [
-	BUTTON_ACTIONS.RESERVED,
-	BUTTON_ACTIONS.ASSIGNED_TO_ADDON,
-] as PinActionValues[];
-
-const getMask = (maskArr: { label: string; value: number }[], key: string) =>
-	maskArr.find(
-		({ label }) => label?.toUpperCase() === key.split('BUTTON_PRESS_')?.pop(),
-	);
-
-const isNonSelectable = (action: PinActionValues) =>
-	[
-		BUTTON_ACTIONS.NONE,
-		BUTTON_ACTIONS.CUSTOM_BUTTON_COMBO,
-		...disabledOptions,
-	].includes(action);
-
-const isDisabled = (action: PinActionValues) =>
-	disabledOptions.includes(action);
-
-const options = Object.entries(BUTTON_ACTIONS)
-	.filter(([, value]) => !isNonSelectable(value))
-	.map(([key, value]) => {
-		const buttonMask = getMask(BUTTON_MASKS, key);
-		const dpadMask = getMask(DPAD_MASKS, key);
-
-		return {
-			label: key,
-			value,
-			type: buttonMask
-				? 'customButtonMask'
-				: dpadMask
-					? 'customDpadMask'
-					: 'action',
-			customButtonMask: buttonMask?.value || 0,
-			customDpadMask: dpadMask?.value || 0,
-		};
-	});
-
-const groupedOptions = [
-	{
-		label: 'Buttons',
-		options: options.filter(({ type }) => type !== 'action'),
-	},
-	{
-		label: 'Actions',
-		options: options.filter(({ type }) => type === 'action'),
-	},
-];
-
-const getMultiValue = (pinData: MaskPayload) => {
-	if (pinData.action === BUTTON_ACTIONS.NONE) return;
-	if (isDisabled(pinData.action)) {
-		const actionKey = invert(BUTTON_ACTIONS)[pinData.action];
-		return [
-			{
-				label: actionKey,
-				value: pinData.action,
-				type: 'action',
-				customButtonMask: pinData.customButtonMask,
-				customDpadMask: pinData.customDpadMask,
-			},
-		];
-	}
-
-	return pinData.action === BUTTON_ACTIONS.CUSTOM_BUTTON_COMBO
-		? options.filter(
-				({ type, customButtonMask, customDpadMask }) =>
-					(pinData.customButtonMask & customButtonMask &&
-						type === 'customButtonMask') ||
-					(pinData.customDpadMask & customDpadMask &&
-						type === 'customDpadMask'),
-			)
-		: options.filter((option) => option.value === pinData.action);
-};
 
 const ProfileLabel = memo(function ProfileLabel({
 	profileIndex,
@@ -192,55 +114,8 @@ const PinSelectList = memo(function PinSelectList({
 
 	const onChange = useCallback(
 		(pin: string) =>
-			(selected: MultiValue<OptionType> | SingleValue<OptionType>) => {
-				// Handle clearing
-				if (!selected || (Array.isArray(selected) && !selected.length)) {
-					setProfilePin(profileIndex, pin, {
-						action: BUTTON_ACTIONS.NONE,
-						customButtonMask: 0,
-						customDpadMask: 0,
-					});
-				} else if (Array.isArray(selected) && selected.length > 1) {
-					const lastSelected = selected[selected.length - 1];
-					// Revert to single option if choosing action type
-					if (lastSelected.type === 'action') {
-						setProfilePin(profileIndex, pin, {
-							action: lastSelected.value,
-							customButtonMask: 0,
-							customDpadMask: 0,
-						});
-					} else {
-						setProfilePin(
-							profileIndex,
-							pin,
-							selected.reduce(
-								(masks, option) => ({
-									...masks,
-									customButtonMask:
-										option.type === 'customButtonMask'
-											? masks.customButtonMask ^ option.customButtonMask
-											: masks.customButtonMask,
-									customDpadMask:
-										option.type === 'customDpadMask'
-											? masks.customDpadMask ^ option.customDpadMask
-											: masks.customDpadMask,
-								}),
-								{
-									action: BUTTON_ACTIONS.CUSTOM_BUTTON_COMBO,
-									customButtonMask: 0,
-									customDpadMask: 0,
-								},
-							),
-						);
-					}
-				} else {
-					setProfilePin(profileIndex, pin, {
-						action: selected[0].value,
-						customButtonMask: 0,
-						customDpadMask: 0,
-					});
-				}
-			},
+			(selected: MultiValue<OptionType> | SingleValue<OptionType>) =>
+				setProfilePin(profileIndex, pin, selectionToMapping(selected)),
 		[],
 	);
 

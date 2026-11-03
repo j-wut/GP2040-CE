@@ -1,7 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { Alert, Button, Col, Form, FormCheck, Row } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import invert from 'lodash/invert';
 import omit from 'lodash/omit';
 
 import { AppContext } from '../Contexts/AppContext';
@@ -10,20 +9,20 @@ import CustomSelect from '../Components/CustomSelect';
 import WebApi from '../Services/WebApi';
 import { getButtonLabels } from '../Data/Buttons';
 import { BUTTON_ACTIONS } from '../Data/Pins';
+import {
+	getMultiValue,
+	groupedOptions,
+	OptionType,
+	selectionToMapping,
+} from '../Data/PinMappingOptions';
+import { MaskPayload } from '../Store/useProfilesStore';
 
-const NONE = -10;
-// Matrix switches are plain inputs: they can't be reserved, handed to an
-// add-on or use a custom button combo (no room to store the combo masks).
-const UNSELECTABLE_ACTIONS = [
-	BUTTON_ACTIONS.RESERVED,
-	BUTTON_ACTIONS.ASSIGNED_TO_ADDON,
-	BUTTON_ACTIONS.CUSTOM_BUTTON_COMBO,
-];
 const NUM_INPUT_PINS = 64;
-
-const actionOptions = Object.entries(BUTTON_ACTIONS)
-	.filter(([, value]) => !UNSELECTABLE_ACTIONS.includes(value))
-	.map(([label, value]) => ({ label, value }));
+const UNMAPPED: MaskPayload = {
+	action: BUTTON_ACTIONS.NONE,
+	customButtonMask: 0,
+	customDpadMask: 0,
+};
 
 type KeyMatrixOptions = {
 	enabled: boolean;
@@ -31,7 +30,7 @@ type KeyMatrixOptions = {
 	firstVirtualPin: number;
 	rowPins: number[];
 	colPins: number[];
-	pinActions: number[];
+	switchMappings: MaskPayload[];
 };
 
 const parsePins = (text: string): number[] | null => {
@@ -95,15 +94,16 @@ const KeyMatrix = () => {
 
 	if (!options) return null;
 
-	const setAction = (index: number, action: number) => {
-		const pinActions = [...options.pinActions];
-		pinActions[index] = action;
-		setOptions({ ...options, pinActions });
+	const setMapping = (index: number, mapping: MaskPayload) => {
+		const switchMappings = [...options.switchMappings];
+		switchMappings[index] = mapping;
+		setOptions({ ...options, switchMappings });
 	};
 
-	const getActionLabel = (label: string) => {
-		const key = label.split('BUTTON_PRESS_').pop();
-		return (key && buttonNames[key]) || t(`Proto:GpioAction.${label}`);
+	const getOptionLabel = (option: OptionType) => {
+		const key = option.label?.split('BUTTON_PRESS_')?.pop();
+		// Need to fallback as some button actions are not part of button names
+		return (key && buttonNames[key]) || t(`Proto:GpioAction.${option.label}`);
 	};
 
 	const save = async () => {
@@ -198,7 +198,7 @@ const KeyMatrix = () => {
 					}}
 				>
 					{switchPins.map((pin, index) => {
-						const action = options.pinActions[index] ?? NONE;
+						const mapping = options.switchMappings[index] ?? UNMAPPED;
 						return (
 							<div
 								key={`matrix-switch-${index}`}
@@ -218,15 +218,12 @@ const KeyMatrix = () => {
 									<CustomSelect
 										inputId={`matrix-switch-${index}`}
 										isClearable
-										isSearchable
-										options={actionOptions}
-										value={{
-											label: invert(BUTTON_ACTIONS)[action],
-											value: action,
-										}}
-										getOptionLabel={(option) => getActionLabel(option.label)}
-										onChange={(change) =>
-											setAction(index, change?.value ?? NONE)
+										isMulti
+										options={groupedOptions}
+										value={getMultiValue(mapping)}
+										getOptionLabel={getOptionLabel}
+										onChange={(selected) =>
+											setMapping(index, selectionToMapping(selected))
 										}
 									/>
 								</div>

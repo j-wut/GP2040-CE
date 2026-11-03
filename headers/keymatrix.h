@@ -7,6 +7,8 @@
 #include "config.pb.h"
 #include "BoardConfig.h"
 
+static_assert(_GpioAction_MAX <= 245, "GpioAction no longer fits the packed matrix switch mapping");
+
 /**
  * Keyboard-style row/column switch matrix.
  *
@@ -53,6 +55,25 @@
 #ifndef KEY_MATRIX_SETTLE_MICROS
 #define KEY_MATRIX_SETTLE_MICROS 10
 #endif
+
+// A matrix switch mapping is packed to fit the saved config:
+//   switchActions[n]      bits 0-7  GpioAction + 10 (NONE = -10 packs to 0)
+//                         bits 8-15 customDpadMask
+//   switchButtonMasks[n]  customButtonMask
+static inline uint32_t packSwitchAction(GpioAction action, uint32_t dpadMask) {
+    return (uint32_t)(uint8_t)((int32_t)action + 10) | ((dpadMask & 0xFF) << 8);
+}
+
+static inline GpioMappingInfo unpackSwitchMapping(uint32_t packedAction, uint32_t buttonMask) {
+    GpioMappingInfo info = GpioMappingInfo_init_zero;
+    info.action = (GpioAction)((int32_t)(packedAction & 0xFF) - 10);
+    info.customDpadMask = (packedAction >> 8) & 0xFF;
+    info.customButtonMask = buttonMask;
+    // switches are plain inputs; they can't be reserved or handed to an add-on
+    if (info.action == GpioAction::RESERVED || info.action == GpioAction::ASSIGNED_TO_ADDON)
+        info.action = GpioAction::NONE;
+    return info;
+}
 
 class KeyMatrix {
 public:
