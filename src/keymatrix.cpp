@@ -41,6 +41,9 @@ void KeyMatrix::setup(const KeyMatrixOptions& options) {
     }
 
     settleMicros = options.has_settleMicros ? options.settleMicros : KEY_MATRIX_SETTLE_MICROS;
+    rowDelayMicros = options.has_rowDelayMicros ? options.rowDelayMicros : KEY_MATRIX_ROW_DELAY_MICROS;
+    if (settleMicros > KEY_MATRIX_MAX_DELAY_MICROS) settleMicros = KEY_MATRIX_MAX_DELAY_MICROS;
+    if (rowDelayMicros > KEY_MATRIX_MAX_DELAY_MICROS) rowDelayMicros = KEY_MATRIX_MAX_DELAY_MICROS;
 
     // Rows idle as pulled-up inputs. A row is pulled low only while it is scanned.
     for (uint8_t r = 0; r < rowCount; r++) {
@@ -72,6 +75,8 @@ void __not_in_flash_func(KeyMatrix::scan)() {
         busy_wait_us_32(settleMicros);
         const Mask_t lowCols = ~gpio_get_all64() & colMask;
         gpio_set_dir(row, GPIO_IN);
+        // let the columns this row pulled low climb back up before the next row
+        busy_wait_us_32(rowDelayMicros);
 
         for (uint8_t c = 0; c < colCount && index < switchCount; c++, index++) {
             if (lowCols & (Mask_t{1} << colPins[c]))

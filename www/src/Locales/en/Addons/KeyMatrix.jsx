@@ -8,6 +8,9 @@ export default {
 	'col-pins-label': 'Column pins',
 	'pins-placeholder': 'e.g. 16, 17, 18',
 	'settle-label': 'Settle time (µs)',
+	'row-delay-label': 'Row delay (µs)',
+	'timing-note':
+		'Settle time: how long each row is pulled low before the columns are read. Row delay: pause after each row before the next one, so long wiring can recover. Raise the row delay if a switch shows phantom presses on the next row. A full scan takes rows × (settle + row delay + about 1 µs).',
 	'switch-count': '{{rows}} rows × {{cols}} columns = {{count}} switches',
 	'switch-count-capped':
 		'{{rows}} rows × {{cols}} columns = {{wanted}} switches, but only {{count}} fit. The rest are ignored.',

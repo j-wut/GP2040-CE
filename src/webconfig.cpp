@@ -1994,6 +1994,7 @@ std::string getKeyMatrixOptions()
 
     doc["enabled"] = matrix.enabled;
     doc["settleMicros"] = matrix.settleMicros;
+    doc["rowDelayMicros"] = matrix.rowDelayMicros;
     doc["firstVirtualPin"] = NUM_BANK0_GPIOS;
     JsonArray rows = doc.createNestedArray("rowPins");
     for (pb_size_t i = 0; i < matrix.rowPins_count; i++) rows.add(matrix.rowPins[i]);
@@ -2052,6 +2053,9 @@ std::string setKeyMatrixOptions()
 
     docToValue(matrix.enabled, doc, "enabled");
     docToValue(matrix.settleMicros, doc, "settleMicros");
+    docToValue(matrix.rowDelayMicros, doc, "rowDelayMicros");
+    matrix.settleMicros = std::min<uint32_t>(std::max<uint32_t>(matrix.settleMicros, 1), KEY_MATRIX_MAX_DELAY_MICROS);
+    matrix.rowDelayMicros = std::min<uint32_t>(matrix.rowDelayMicros, KEY_MATRIX_MAX_DELAY_MICROS);
 
     // release pins the matrix no longer uses, then claim the new ones
     const std::set<int32_t> claimedPins = matrix.enabled ? newPins : std::set<int32_t>();

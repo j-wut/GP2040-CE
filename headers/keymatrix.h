@@ -51,10 +51,22 @@ static_assert(_GpioAction_MAX <= 245, "GpioAction no longer fits the packed matr
 #define KEY_MATRIX_PIN_ACTIONS GpioAction::NONE
 #endif
 
-// Time to let the column lines settle after pulling a row low.
+// Time to let the column lines settle after pulling a row low. A pressed
+// switch pulls its column down through the strong GPIO driver, so this is short.
 #ifndef KEY_MATRIX_SETTLE_MICROS
-#define KEY_MATRIX_SETTLE_MICROS 10
+#define KEY_MATRIX_SETTLE_MICROS 5
 #endif
+
+// Pause after a row is released, before the next row is pulled low. The
+// columns that row pulled low climb back up through the weak pull-ups; with
+// long wiring that takes a few microseconds, and a read before then shows a
+// phantom press on the next row. Set in the web config (see docs/keymatrix-sim
+// and hardware/keymatrix-adapter/simulate.py for how long wiring needs).
+#ifndef KEY_MATRIX_ROW_DELAY_MICROS
+#define KEY_MATRIX_ROW_DELAY_MICROS 40
+#endif
+
+#define KEY_MATRIX_MAX_DELAY_MICROS 1000
 
 // A matrix switch mapping is packed to fit the saved config:
 //   switchActions[n]      bits 0-7  GpioAction + 10 (NONE = -10 packs to 0)
@@ -115,6 +127,7 @@ private:
     uint8_t colCount = 0;
     uint8_t switchCount = 0;
     uint32_t settleMicros = KEY_MATRIX_SETTLE_MICROS;
+    uint32_t rowDelayMicros = KEY_MATRIX_ROW_DELAY_MICROS;
     uint8_t rowPins[KEY_MATRIX_MAX_ROWS] = {};
     uint8_t colPins[KEY_MATRIX_MAX_COLS] = {};
     uint8_t switchPins[KEY_MATRIX_MAX_SWITCHES] = {};

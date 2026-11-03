@@ -1510,6 +1510,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
         }
         INIT_UNSET_PROPERTY(matrix, enabled, !!KEY_MATRIX_ENABLED);
         INIT_UNSET_PROPERTY(matrix, settleMicros, KEY_MATRIX_SETTLE_MICROS);
+        INIT_UNSET_PROPERTY(matrix, rowDelayMicros, KEY_MATRIX_ROW_DELAY_MICROS);
 
         // fill in any switch that has no stored action yet
         const GpioAction pinActions[] = { KEY_MATRIX_PIN_ACTIONS };

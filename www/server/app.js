@@ -939,9 +939,10 @@ app.get('/api/getLightsPresets/7', (req, res) => res.send({}));
 app.get('/api/getKeyMatrixOptions', (req, res) => {
 	return res.send({
 		enabled: true,
-		settleMicros: 10,
+		settleMicros: 5,
+		rowDelayMicros: 40,
 		firstVirtualPin: 30,
-		rowPins: [16, 17, 18, 19, 21, 22],
+		rowPins: [13, 14, 15, 16, 17, 18],
 		colPins: [5, 6, 7, 8, 9, 10, 11, 12],
 		switchMappings: [
 			...[11, 12, 6, 5, 9, 10, 8, 7, 3, 4, 2, 1, 17, 18, 41, 42].map(
@@ -963,12 +964,12 @@ app.get('/api/getKeyMatrixOptions', (req, res) => {
 			10,
 			11,
 			12,
+			13,
+			14,
+			15,
 			16,
 			17,
 			18,
-			19,
-			21,
-			22,
 			...Array(34)
 				.fill(0)
 				.map((_, i) => 30 + i),

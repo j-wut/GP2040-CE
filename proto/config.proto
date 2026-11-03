@@ -969,6 +969,8 @@ message KeyMatrixOptions
     // (see keymatrix.h for the packing and each switch's input pin number)
     repeated uint32 switchActions = 5 [(nanopb).max_count = 64, packed = true];
     repeated uint32 switchButtonMasks = 6 [(nanopb).max_count = 64, packed = true];
+    // pause after each row is released, before the next row is scanned
+    optional uint32 rowDelayMicros = 7;
 }
 
 message AddonOptions

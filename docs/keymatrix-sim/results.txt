@@ -1,0 +1,17 @@
+Pass = pressed reads < 0.8 V and open reads > 2.0 V at every read
+
+Settle 5 us, then the row delay after each row is released
+ pull-up  wire C   recovery     0us    10us    20us    40us    70us   100us
+    50k    20pF     0.9 us    PASS    PASS    PASS    PASS    PASS    PASS
+    50k   100pF     4.2 us    PASS    PASS    PASS    PASS    PASS    PASS
+    50k   200pF     8.2 us    FAIL    PASS    PASS    PASS    PASS    PASS
+    50k   500pF    20.3 us    FAIL    FAIL    PASS    PASS    PASS    PASS
+    50k  1000pF    40.5 us    FAIL    FAIL    FAIL    PASS    PASS    PASS
+    80k    20pF     1.5 us    PASS    PASS    PASS    PASS    PASS    PASS
+    80k   100pF     6.7 us    FAIL    PASS    PASS    PASS    PASS    PASS
+    80k   200pF    13.3 us    FAIL    PASS    PASS    PASS    PASS    PASS
+    80k   500pF    32.8 us    FAIL    FAIL    FAIL    PASS    PASS    PASS
+    80k  1000pF    65.4 us    FAIL    FAIL    FAIL    FAIL    PASS    PASS
+
+recovery: time after a row is released until its columns read high again.
+A row delay longer than the recovery always passes. Every read is checked for every pattern.

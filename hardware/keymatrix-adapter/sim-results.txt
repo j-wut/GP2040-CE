@@ -1,0 +1,16 @@
+Adapter PCB copper per net: rows 40.8-43.9 pF, columns 13.5-19.1 pF
+Timing: settle 5 us, row delay 40 us -> full scan about 276 us (USB reports every 1000 us)
+Pass = pressed reads < 0.8 V and open reads > 2.0 V on all 48 switches, every pattern
+
+wiring (ribbon / switch wire / column chain)   pull-up press seen  recovery worst pressed worst open  result
+no wiring (pins only)                             50k      33 ns    1.4 us       0.475 V    3.300 V  PASS
+no wiring (pins only)                             80k      33 ns    2.2 us       0.447 V    3.300 V  PASS
+short: bench test (0.15 / 0.2 / 1 m)              50k     104 ns    4.7 us       0.475 V    3.297 V  PASS
+short: bench test (0.15 / 0.2 / 1 m)              80k     104 ns    7.6 us       0.447 V    3.265 V  PASS
+typical: arcade stick (0.3 / 0.5 / 3 m)           50k     229 ns   10.6 us       0.475 V    3.188 V  PASS
+typical: arcade stick (0.3 / 0.5 / 3 m)           80k     229 ns   17.1 us       0.447 V    2.925 V  PASS
+long: cabinet (1 / 1 / 6 m)                       50k     442 ns   20.7 us       0.490 V    2.771 V  PASS
+long: cabinet (1 / 1 / 6 m)                       80k     384 ns   33.5 us       0.448 V    2.302 V  PASS
+
+press seen: time from the row going low until a pressed column reads low at the RP2040 pin
+recovery:   time after a row is released until its columns read high again (row delay must cover it)

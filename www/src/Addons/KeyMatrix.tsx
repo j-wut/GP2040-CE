@@ -27,6 +27,7 @@ const UNMAPPED: MaskPayload = {
 type KeyMatrixOptions = {
 	enabled: boolean;
 	settleMicros: number;
+	rowDelayMicros: number;
 	firstVirtualPin: number;
 	rowPins: number[];
 	colPins: number[];
@@ -176,7 +177,27 @@ const KeyMatrix = () => {
 							}
 						/>
 					</Form.Group>
+					<Form.Group as={Col} sm={2}>
+						<Form.Label>{t('KeyMatrix:row-delay-label')}</Form.Label>
+						<Form.Control
+							size="sm"
+							type="number"
+							min={0}
+							max={1000}
+							value={options.rowDelayMicros}
+							onChange={(e) =>
+								setOptions({
+									...options,
+									rowDelayMicros: Math.max(
+										0,
+										parseInt(e.target.value, 10) || 0,
+									),
+								})
+							}
+						/>
+					</Form.Group>
 				</Row>
+				<p className="text-secondary small">{t('KeyMatrix:timing-note')}</p>
 				<p>
 					{switchPins.length < rows * cols
 						? t('KeyMatrix:switch-count-capped', {
