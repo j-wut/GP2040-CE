@@ -1,0 +1,61 @@
+# GP2040-CE for Raspberry Pi 5 / CM5 / Pi 4 / CM4 (USB gadget mode)
+# Copy to /etc/gp2040-linux.conf. Lines are "key = value"; # starts a comment.
+
+# USB mode: switch (Nintendo Switch, HORI-style HID) or dinput (generic HID / PC)
+mode = switch
+
+# Requested interrupt polling rate: 8000, 4000, 2000, 1000, 500, 250 or 125.
+# 8000 needs a High Speed (USB 2.0 480 Mbit/s) link and a kernel whose f_hid has
+# the "interval" option. The host decides the final rate; many consoles poll
+# slower whatever the device asks for.
+poll_rate_hz = 8000
+
+# Re-send the current report at this rate even when nothing changed (0 = off).
+# Reports are always sent as soon as input changes.
+heartbeat_hz = 0
+
+# Eager debounce: a change is sent at once, then bounces on that pin are ignored
+# for this long. 0 disables it. 2000-5000 suits most mechanical switches.
+debounce_us = 3000
+
+# SOCD cleaning: up_priority, neutral, last_wins, first_wins or bypass
+socd = neutral
+
+# D-pad mode: digital, left_analog or right_analog
+dpad_mode = digital
+
+# events = sleep on GPIO interrupts (low CPU). busypoll = sample in a tight loop,
+# best on a core reserved with isolcpus=3 in cmdline.txt.
+input_method = events
+busypoll_interval_us = 0
+cpu = -1
+rt_priority = 0
+
+# auto finds the 40-pin header chip (pinctrl-rp1 on Pi 5, pinctrl-bcm2711 on Pi 4/CM4)
+gpio_chip = auto
+hidg_device = /dev/hidg0
+
+# Buttons wired from GPIO to ground with the internal pull-up (GP2040 default wiring).
+active_low = true
+bias = pull_up
+
+# Pin map (BCM GPIO numbers). Names follow GP2040: B1 B2 B3 B4 L1 R1 L2 R2
+# S1 S2 L3 R3 A1 A2 A3 A4, plus up/down/left/right. Leave out what you do not use.
+pin.up    = 17
+pin.down  = 27
+pin.left  = 22
+pin.right = 23
+pin.b1    = 5
+pin.b2    = 6
+pin.b3    = 13
+pin.b4    = 19
+pin.l1    = 26
+pin.r1    = 16
+pin.l2    = 20
+pin.r2    = 21
+pin.s1    = 24
+pin.s2    = 25
+pin.l3    = 12
+pin.r3    = 7
+pin.a1    = 8
+pin.a2    = 11

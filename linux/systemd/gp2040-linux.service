@@ -1,0 +1,15 @@
+[Unit]
+Description=GP2040-CE controller (GPIO to USB HID)
+Requires=gp2040-gadget.service
+After=gp2040-gadget.service
+
+[Service]
+ExecStart=/usr/local/bin/gp2040-linux --config /etc/gp2040-linux.conf
+Restart=always
+RestartSec=1
+# Needed for rt_priority / mlockall in the config.
+LimitRTPRIO=99
+LimitMEMLOCK=infinity
+
+[Install]
+WantedBy=multi-user.target

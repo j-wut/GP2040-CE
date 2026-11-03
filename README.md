@@ -66,6 +66,10 @@ Full results can be found in the [GP2040-CE v0.7.12 Firmware Latency Test Result
 
 Results from v0.7.11 can be found [HERE](https://github.com/OpenStickCommunity/Site/raw/main/latency_testing/GP2040-CE_Firmware_Latency_Test_Results_v0.7.11.xlsx). Previous results can be found in the `latency_testing` folder.
 
+### Raspberry Pi 5 / CM5 / Pi 4 / CM4 (Linux USB gadget)
+
+The [`linux/`](linux/README.md) folder has a separate GP2040-CE build that runs on a Raspberry Pi under Linux and acts as a USB controller through the Pi's USB device port. These boards have High Speed USB, so they can ask the host for polling up to 8 kHz. RP2040 and RP2350 boards are Full Speed only and stay at the 1 kHz maximum.
+
 ## Support
 
 If you would like to discuss features, issues or anything else related to GP2040-CE please [create an issue](https://github.com/OpenStickCommunity/GP2040-CE/issues/new) or join the [OpenStick GP2040-CE Discord](https://discord.gg/k2pxhke7q8) support channel.

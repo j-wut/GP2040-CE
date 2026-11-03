@@ -1,0 +1,32 @@
+name: Linux gadget port
+
+on:
+  push:
+    branches: ["main"]
+    paths: ["linux/**", "headers/drivers/hid/**", "headers/drivers/switch/**", ".github/workflows/linux.yml"]
+  pull_request:
+    branches: ["main"]
+    paths: ["linux/**", "headers/drivers/hid/**", "headers/drivers/switch/**", ".github/workflows/linux.yml"]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.1
+      - name: Build and test (host)
+        run: |
+          cmake -S linux -B build-linux
+          cmake --build build-linux -j
+          ctest --test-dir build-linux --output-on-failure
+      - name: Cross-compile for 64-bit Raspberry Pi OS
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++-aarch64-linux-gnu
+          cmake -S linux -B build-aarch64 -DCMAKE_SYSTEM_NAME=Linux -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
+            -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ -DBUILD_TESTING=OFF
+          cmake --build build-aarch64 -j
+      - uses: actions/upload-artifact@v6.0.0
+        with:
+          name: gp2040-linux-aarch64
+          path: build-aarch64/gp2040-linux
