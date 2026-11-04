@@ -940,7 +940,7 @@ app.get('/api/getKeyMatrixOptions', (req, res) => {
 	return res.send({
 		enabled: true,
 		settleMicros: 5,
-		rowDelayMicros: 40,
+		rowDelayMicros: 50,
 		firstVirtualPin: 30,
 		rowPins: [13, 14, 15, 16, 17, 18],
 		colPins: [5, 6, 7, 8, 9, 10, 11, 12],

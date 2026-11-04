@@ -5,14 +5,38 @@ A small board that turns the 20-pin header of the **RP2040 Advanced Breakout Boa
 [RP2040AdvancedBreakoutBoardUSBPassthroughMatrix](../../configs/RP2040AdvancedBreakoutBoardUSBPassthroughMatrix)
 firmware config.
 
-- 112 x 72 mm, 2 layers, all through-hole connectors plus 48 SOD-123 diodes.
+- 140 x 100 mm, 2 layers, all through-hole connectors plus 48 SOD-123 diodes.
 - **J1** connects to the breakout board's 20-pin header with a straight 20-pin IDC ribbon cable (pin 1 to pin 1).
-- **J2** is an expansion connector with the same pinout, wired in parallel with J1.
-- **J3-J10** are one 7-way screw terminal per matrix column: R1-R6 (one per switch) and C (the column common).
-- **J11** brings out GPIO 19 and GND for one ordinary button (UP in the default mapping).
+- **J2-J9** are one 7-way screw terminal per matrix column: R1-R6 (one per switch) and C (the column common).
+- **J10** brings out GPIO 19 and GND for one ordinary button (UP in the default mapping).
+- **J11-J16** are three pairs of 20-pin switch connectors (A and B). Pin N on A and pin N on B are the two sides of
+  one switch, in the same order on every pair.
 - One 1N4148W diode per switch, already on the board. No diodes are needed in the wiring.
 
-## Wiring a switch
+Every switch can be wired either way: to its screw terminal pair, or to its pins on a connector pair. Both reach
+the same switch.
+
+## Switch numbers
+
+Switches are numbered row by row: switch N is row ⌈N / 8⌉, column ((N - 1) mod 8) + 1. Switch 1 is R1C1, 8 is
+R1C8, 9 is R2C1, and 48 is R6C8.
+
+| Pair | Connectors | Switches | Pin N carries |
+|------|-----------|----------|---------------|
+| 1 | J11 (A), J12 (B) | 1-20 | switch N |
+| 2 | J13 (A), J14 (B) | 21-40 | switch 20 + N |
+| 3 | J15 (A), J16 (B) | 41-48 | switch 40 + N (pins 1-8; pins 9-20 unused) |
+
+## Wiring with the connector pairs
+
+Wire switch N between pin N of the A connector and pin N of the B connector of its pair, for example with two
+20-pin IDC ribbons or crimped 2x10 housings. The A pin goes through that switch's diode to its row; the B pin is
+its column. B pins of switches in the same column are connected together on the board, so a harness can share
+them, but A pins must never be shared.
+
+Do not plug a normal 20-pin button harness (buttons wired to ground) into these connectors.
+
+## Wiring with the screw terminals
 
 Each switch gets two wires: one to its own terminal (R1-R6) and one to the C terminal of the same block. The C
 terminals can be daisy-chained between the switches of a column, the same way ground is daisy-chained on a normal
@@ -31,7 +55,7 @@ while the adapter is connected: those GPIOs are matrix lines now.
 
 ## Signals
 
-| J1/J2 pin | Signal | Breakout label | | J1/J2 pin | Signal | Breakout label |
+| J1 pin | Signal | Breakout label | | J1 pin | Signal | Breakout label |
 |-----|--------|----|-|-----|--------|----|
 | 1   | GP19 direct | U  | | 2   | ROW6 (GP18) | D |
 | 3   | ROW5 (GP17) | R  | | 4   | ROW4 (GP16) | L |
@@ -46,13 +70,6 @@ while the adapter is connected: those GPIOs are matrix lines now.
 
 The pin numbers follow the breakout board's pinout image (pin 1 next to the "U" label, pins 19 and 20 are +5 V).
 Check pin 1 on your board before the first power-up.
-
-### Expansion connector (J2)
-
-J2 carries the same matrix rows, columns, GP19, GND and +5 V. Use it to reach matrix positions from a second board,
-for example a remote button panel. Anything on J2 must also wire each switch in series with a diode (stripe toward
-the row) between a row and a column. A normal 20-pin button harness that wires every button to ground will not work
-on J2. A switch wired on J2 and a switch on the same matrix position here act as one input.
 
 ## Files
 
@@ -86,14 +103,14 @@ does and checks every read for several held-switch patterns, including all 48 he
 
 | Wiring (ribbon / switch wire / column chain) | Press seen at the pin | Column recovery | Result with defaults |
 |-----|-----|-----|-----|
-| short: 0.15 m / 0.2 m / 1 m | 0.1 us | up to 7.6 us | pass |
-| typical arcade stick: 0.3 m / 0.5 m / 3 m | 0.2 us | up to 17 us | pass |
-| long cabinet: 1 m / 1 m / 6 m | 0.4 us | up to 34 us | pass |
+| short: 0.15 m / 0.2 m / 1 m | 0.2 us | up to 12 us | pass |
+| typical arcade stick: 0.3 m / 0.5 m / 3 m | 0.3 us | up to 22 us | pass |
+| long cabinet: 1 m / 1 m / 6 m | 0.5 us | up to 38 us | pass |
 
-Wire length adds no meaningful latency: a press shows up at the pin in under half a microsecond even with cabinet
+Wire length adds no meaningful latency: a press shows up at the pin in about half a microsecond or less even with cabinet
 wiring. What wiring does set is how long a released row's columns take to climb back through the RP2040's weak
-pull-ups. The firmware waits a fixed **row delay** after each row for that (default 40 us, set in the web config
-next to the settle time). With the defaults a full scan of all six rows takes about 276 us, well inside the 1 ms
+pull-ups. The firmware waits a fixed **row delay** after each row for that (default 50 us, set in the web config
+next to the settle time). With the defaults a full scan of all six rows takes about 336 us, well inside the 1 ms
 between USB reports. Shorter wiring can use a smaller row delay; see the table in
 [docs/keymatrix-sim/results.txt](../../docs/keymatrix-sim/results.txt).
 

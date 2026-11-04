@@ -63,7 +63,7 @@ static_assert(_GpioAction_MAX <= 245, "GpioAction no longer fits the packed matr
 // phantom press on the next row. Set in the web config (see docs/keymatrix-sim
 // and hardware/keymatrix-adapter/simulate.py for how long wiring needs).
 #ifndef KEY_MATRIX_ROW_DELAY_MICROS
-#define KEY_MATRIX_ROW_DELAY_MICROS 40
+#define KEY_MATRIX_ROW_DELAY_MICROS 50
 #endif
 
 #define KEY_MATRIX_MAX_DELAY_MICROS 1000

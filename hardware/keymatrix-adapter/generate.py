@@ -69,6 +69,31 @@ def gpio_net(gpio):
     return f"GP{gpio}"
 
 
+# Switch connector pairs: pin N on connector A and pin N on connector B are the
+# two sides of one switch. Switches are numbered row by row (R1C1 = 1, R1C2 = 2,
+# ..., R6C8 = 48), 20 per pair, the same order on every pair.
+PAIR_PINS = 20
+NUM_SWITCHES = len(ROW_GPIOS) * len(COL_GPIOS)
+NUM_PAIRS = (NUM_SWITCHES + PAIR_PINS - 1) // PAIR_PINS
+
+
+def term_ref(c):
+    return f"J{2 + c}"
+
+
+GP19_REF = f"J{2 + len(COL_GPIOS)}"
+
+
+def pair_refs(p):
+    first = 3 + len(COL_GPIOS) + 2 * p
+    return f"J{first}", f"J{first + 1}"
+
+
+def switch_rc(k):
+    """Switch number k (0-based) -> (row, col)."""
+    return divmod(k, len(COL_GPIOS))
+
+
 def header_net(pin):
     sig = HEADER[pin]
     return gpio_net(int(sig[2:])) if sig.startswith("GP") else sig
@@ -87,14 +112,27 @@ def build_parts():
     hdr = {str(p): header_net(p) for p in HEADER}
     parts.append(dict(ref="J1", sym="Connector_Generic:Conn_02x10_Odd_Even",
                       value="To breakout", fp=FP_HEADER, pins=hdr))
-    parts.append(dict(ref="J2", sym="Connector_Generic:Conn_02x10_Odd_Even",
-                      value="Expansion", fp=FP_HEADER, pins=dict(hdr)))
     for c in range(len(COL_GPIOS)):
         pins = {str(r + 1): sw_net(r, c) for r in range(len(ROW_GPIOS))}
         pins["7"] = col_net(c)
-        parts.append(dict(ref=f"J{3 + c}", sym="Connector:Screw_Terminal_01x07",
+        parts.append(dict(ref=term_ref(c), sym="Connector:Screw_Terminal_01x07",
                           value=f"Column {c + 1}", fp=FP_TERM7, pins=pins))
-    parts.append(dict(ref="J11", sym="Connector:Screw_Terminal_01x02",
+    for p in range(NUM_PAIRS):
+        a, b = {}, {}
+        for pin in range(PAIR_PINS):
+            k = p * PAIR_PINS + pin
+            if k >= NUM_SWITCHES:
+                break
+            r, c = switch_rc(k)
+            a[str(pin + 1)] = sw_net(r, c)   # switch side through its diode
+            b[str(pin + 1)] = col_net(c)     # column common side
+        lo, hi = p * PAIR_PINS + 1, min((p + 1) * PAIR_PINS, NUM_SWITCHES)
+        ra, rb = pair_refs(p)
+        parts.append(dict(ref=ra, sym="Connector_Generic:Conn_02x10_Odd_Even",
+                          value=f"Switches {lo}-{hi} A", fp=FP_HEADER, pins=a, pair=p, side="A"))
+        parts.append(dict(ref=rb, sym="Connector_Generic:Conn_02x10_Odd_Even",
+                          value=f"Switches {lo}-{hi} B", fp=FP_HEADER, pins=b, pair=p, side="B"))
+    parts.append(dict(ref=GP19_REF, sym="Connector:Screw_Terminal_01x02",
                       value=f"GP{DIRECT_GPIO} direct", fp=FP_TERM2,
                       pins={"1": gpio_net(DIRECT_GPIO), "2": "GND"}))
     n = 1
@@ -208,10 +246,14 @@ def build_schematic(parts):
     text("Breakout board 20-pin header (straight IDC ribbon, pin 1 to pin 1)", 20.32, 25.4)
     hdr_txt = lambda y: dict(ref_at=(39.37, snap(y) - 15.24), val_at=(39.37, snap(y) + 15.24))
     place(byref["J1"], 38.1, 45.72, **hdr_txt(45.72))
-    text("Expansion: same pinout, wired in parallel with J1", 20.32, 81.28)
-    place(byref["J2"], 38.1, 101.6, **hdr_txt(101.6))
-    text(f"GPIO {DIRECT_GPIO} stays a normal button (UP), wired to ground", 20.32, 132.08)
-    place(byref["J11"], 38.1, 142.24, ref_at=(38.1, 137.16), val_at=(38.1, 149.86))
+    text(f"GPIO {DIRECT_GPIO} stays a normal button (UP), wired to ground", 20.32, 81.28)
+    place(byref[GP19_REF], 38.1, 91.44, ref_at=(38.1, 86.36), val_at=(38.1, 99.06))
+    text("Switch connector pairs: pin N on A and pin N on B are the two sides of one switch.", 20.32, 195.58)
+    text("Switches numbered row by row: 1 = R1C1, 2 = R1C2 ... 8 = R1C8, 9 = R2C1 ... 48 = R6C8. Same order on every pair.", 20.32, 199.39)
+    for p in range(NUM_PAIRS):
+        for i, ref in enumerate(pair_refs(p)):
+            x = 38.1 + (2 * p + i) * 63.5
+            place(byref[ref], x, 228.6, **dict(ref_at=(snap(x) + 1.27, 213.36), val_at=(snap(x) + 1.27, 243.84)))
     for i in range(4):
         place(byref[f"H{i + 1}"], 25.4 + i * 12.7, 165.1)
 
@@ -223,7 +265,7 @@ def build_schematic(parts):
         gy = 45.72 + (c // 4) * 66.04
         g = COL_GPIOS[c]
         text(f"Column {c + 1}: GP{g} ({BREAKOUT_LABEL[g]})", gx, gy - 7.62)
-        place(byref[f"J{3 + c}"], gx + 7.62, gy + 7.62,
+        place(byref[term_ref(c)], gx + 7.62, gy + 7.62,
               ref_at=(snap(gx + 7.62), snap(gy + 7.62) - 10.16), val_at=(snap(gx + 7.62), snap(gy + 7.62) + 12.7))
         for r in range(len(ROW_GPIOS)):
             d = next(p for p in parts if p.get("col") == c and p.get("row") == r)
@@ -231,7 +273,7 @@ def build_schematic(parts):
             place(d, gx + 43.18, dy, ref_at=(snap(gx + 43.18), snap(dy) - 1.9), val_at=(snap(gx + 43.18) + 12, snap(dy) + 30))
     # hide diode values (they all say 1N4148W) by moving them off the grid area is ugly;
     # instead state it once
-    text("D1-D48: 1N4148W (SOD-123), cathode/stripe to ROW", 88.9, 180.34)
+    text("D1-D48: 1N4148W (SOD-123), cathode/stripe to ROW", 88.9, 177.8)
 
     out.append('(kicad_sch (version 20230121) (generator eeschema)\n')
     out.append(f'  (uuid {root})\n')
@@ -257,11 +299,14 @@ def build_schematic(parts):
 # PCB
 # ---------------------------------------------------------------------------
 
-BOARD_W = 112.0
-BOARD_H = 72.0
+BOARD_W = 140.0
+BOARD_H = 100.0
 TERM_Y = 5.6          # pad row of the terminal blocks, from the top/bottom edge
-BLOCK_PITCH = 26.6    # one 7-way block per column, four along each long edge
-BLOCK_X0 = 5.6        # pad 1 of the first block (left edge of its body ~3.3)
+BLOCK_PITCH = 34.0    # one 7-way block per column, four along each long edge
+BLOCK_X0 = 8.0        # pad 1 of the first block (left edge of its body ~5.7)
+HEADER_X0 = 16.0      # pin 1 of J1; the switch pair headers follow
+HEADER_PITCH = 17.0
+HEADER_Y = 33.0       # pin 1 row of the vertical headers
 DIODE_DY = 9.0        # diode centre, measured inward from the terminal pads
 
 
@@ -336,9 +381,9 @@ def build_pcb(parts):
         top = c < 4
         x1 = term_pad_x(c, 0)
         if top:  # rotated 180: pad 1 ends up on the right, so anchor at the right end
-            fps[f"J{3 + c}"] = add(byref[f"J{3 + c}"], x1 + 21.0, TERM_Y, 180)
+            fps[term_ref(c)] = add(byref[term_ref(c)], x1 + 21.0, TERM_Y, 180)
         else:
-            fps[f"J{3 + c}"] = add(byref[f"J{3 + c}"], x1, BOARD_H - TERM_Y, 0)
+            fps[term_ref(c)] = add(byref[term_ref(c)], x1, BOARD_H - TERM_Y, 0)
 
     # Diodes sit right behind their terminal pin, anode toward the terminal.
     for p in parts:
@@ -352,15 +397,16 @@ def build_pcb(parts):
             else:
                 fps[p["ref"]] = add(p, x, BOARD_H - TERM_Y - DIODE_DY, 270)  # pad 2 (A) down
 
-    # Headers: horizontal, side by side in the middle. Pin 1 at the left of the
-    # lower row so the keying notch faces down.
+    # Headers stand vertically in a row across the middle, pin 1 at the top
+    # left: J1 to the breakout, then the switch connector pairs (A, B, A, B, ...).
     hy = BOARD_H / 2
-    fps["J1"] = add(byref["J1"], 18.0, hy + 1.27, 90)
-    fps["J2"] = add(byref["J2"], 64.0, hy + 1.27, 90)
-    fps["J11"] = add(byref["J11"], BOARD_W - 5.6, hy + 1.75, 90)
+    header_refs = ["J1"] + [r for p in range(NUM_PAIRS) for r in pair_refs(p)]
+    for i, ref in enumerate(header_refs):
+        fps[ref] = add(byref[ref], HEADER_X0 + i * HEADER_PITCH, HEADER_Y, 0)
+    fps[GP19_REF] = add(byref[GP19_REF], BOARD_W - 5.6, hy + 1.75, 90)
 
-    for i, (x, y) in enumerate([(5.0, 24.0), (5.0, BOARD_H - 24.0),
-                                (BOARD_W - 15.0, 24.0), (BOARD_W - 15.0, BOARD_H - 24.0)]):
+    for i, (x, y) in enumerate([(5.0, hy - 11.0), (5.0, hy + 11.0),
+                                (BOARD_W - 11.0, hy - 18.0), (BOARD_W - 11.0, hy + 18.0)]):
         fps[f"H{i + 1}"] = add(byref[f"H{i + 1}"], x, y, 0)
 
     # Reference designators stay on the fab layer; the silkscreen gets plain
@@ -391,12 +437,18 @@ def build_pcb(parts):
         hy2 = TERM_Y + 13.6 if top else BOARD_H - TERM_Y - 13.6
         silk(f"COLUMN {c + 1} (GP{g} {BREAKOUT_LABEL[g]})", hx, hy2, 1.0)
 
-    silk("J1: TO BREAKOUT 20-PIN", 18.0 + 11.43, hy - 5.6, 1.0, bold=True)
-    silk("J2: EXPANSION (SAME PINOUT)", 64.0 + 11.43, hy - 5.6, 1.0)
-    silk(f"GP{DIRECT_GPIO} (UP)", BOARD_W - 13.5, hy + 1.75, 0.9)
-    silk("GND", BOARD_W - 13.5, hy - 1.75, 0.9)
-    silk("GP2040-CE KEY MATRIX ADAPTER v1.0", BOARD_W / 2, hy + 8.0, 1.2, bold=True)
-    silk("SWITCH: R1-R6 TERMINAL <-> SAME BLOCK C   DIODE STRIPE TO ROW", BOARD_W / 2, hy + 10.0, 0.9)
+    ly2 = HEADER_Y + 22.86 + 7.2
+    silk("BREAKOUT", HEADER_X0 + 1.27, ly2, 1.0, bold=True)
+    for p in range(NUM_PAIRS):
+        lo, hi = p * PAIR_PINS + 1, min((p + 1) * PAIR_PINS, NUM_SWITCHES)
+        for i, side in enumerate("AB"):
+            x = HEADER_X0 + (1 + 2 * p + i) * HEADER_PITCH + 1.27
+            silk(f"SW{lo}-{hi} {side}", x, ly2, 1.0, bold=True)
+    silk(f"GP{DIRECT_GPIO}", BOARD_W - 12.0, hy + 1.75, 0.9)
+    silk("GND", BOARD_W - 12.0, hy - 1.75, 0.9)
+    silk("GP2040-CE KEY MATRIX ADAPTER v1.1", BOARD_W / 2, ly2 + 3.0, 1.2, bold=True)
+    silk("SWITCH N: PIN N ON A <-> PIN N ON B, OR TERMINAL R1-R6 <-> C.  N = (ROW-1)*8 + COL",
+         BOARD_W / 2, ly2 + 5.0, 0.9)
 
     path = os.path.join(HERE, NAME + ".kicad_pcb")
     board.SetFileName(path)
@@ -409,24 +461,32 @@ def route():
     import autoroute
 
     path = os.path.join(HERE, NAME + ".kicad_pcb")
-    board = pcbnew.LoadBoard(path)
-    r = autoroute.Router(board, BOARD_W, BOARD_H)
-    # group pads by net
-    by_net = {}
-    for key, (code, cells, centre, layers) in r.pad_cells.items():
-        by_net.setdefault(code, []).append((layers, cells, centre, key))
-    netinfo = board.GetNetInfo()
-    order = []
-    for code in by_net:
-        n = netinfo.GetNetItem(code).GetNetname()
-        rank = 0 if n.startswith("SW_") else 1 if n.startswith("ROW") else 2 if n.startswith("COL") else 3
-        order.append((rank, len(by_net[code]), n, code))
-    order.sort()
-    failed = []
-    for rank, count, n, code in order:
-        terms = sorted(by_net[code], key=lambda t: (t[2][0], t[2][1]))
-        if not r.route_net(code, [(t[0], t[1], t[2]) for t in terms]):
-            failed.append(n)
+    first = []  # nets that failed before get routed first next time
+    for attempt in range(8):
+        board = pcbnew.LoadBoard(path)
+        r = autoroute.Router(board, BOARD_W, BOARD_H)
+        # group pads by net
+        by_net = {}
+        for key, (code, cells, centre, layers) in r.pad_cells.items():
+            by_net.setdefault(code, []).append((layers, cells, centre, key))
+        netinfo = board.GetNetInfo()
+        order = []
+        for code in by_net:
+            n = netinfo.GetNetItem(code).GetNetname()
+            rank = 0 if n.startswith("SW_") else 1 if n.startswith("ROW") else 2 if n.startswith("COL") else 3
+            if n in first:
+                rank = -1 - (len(first) - first.index(n))
+            order.append((rank, len(by_net[code]), n, code))
+        order.sort()
+        failed = []
+        for rank, count, n, code in order:
+            terms = sorted(by_net[code], key=lambda t: (t[2][0], t[2][1]))
+            if not r.route_net(code, [(t[0], t[1], t[2]) for t in terms]):
+                failed.append(n)
+        if not failed:
+            break
+        print(f"attempt {attempt + 1}: could not route {', '.join(failed)}; retrying with them first")
+        first = [n for n in first if n not in failed] + failed
     r.write()
 
     # ground pour on both layers

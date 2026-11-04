@@ -147,8 +147,8 @@ PULLUPS = [50e3, 80e3]       # RP2040 internal pull-up range
 CAPS = [20e-12, 100e-12, 200e-12, 500e-12, 1000e-12]  # per wire: pin + PCB up to a long harness
 RON = 40                     # GPIO output low resistance at 3.3 V
 SETTLE_US = 5                # KEY_MATRIX_SETTLE_MICROS
-ROW_DELAYS_US = [0, 10, 20, 40, 70, 100]  # KEY_MATRIX_ROW_DELAY_MICROS (default 40), set in the web config
-DEFAULT_ROW_DELAY_US = 40
+ROW_DELAYS_US = [0, 10, 20, 50, 70, 100]  # KEY_MATRIX_ROW_DELAY_MICROS (default 50), set in the web config
+DEFAULT_ROW_DELAY_US = 50
 
 
 def row_delay_table():

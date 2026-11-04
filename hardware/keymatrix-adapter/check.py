@@ -111,9 +111,16 @@ def check_firmware(pcb):
             continue
         r, c = int(m.group(1)) - 1, int(m.group(2)) - 1
         diode = [ref for ref, pin in nodes if ref.startswith("D") and pin == "2"]
-        term = [ref for ref, pin in nodes if ref == f"J{3 + c}" and pin == str(r + 1)]
-        if len(diode) != 1 or len(term) != 1 or len(nodes) != 2:
-            fail(f"{net} should join one terminal and one diode anode, has {sorted(nodes)}")
+        term = [ref for ref, pin in nodes if ref == generate.term_ref(c) and pin == str(r + 1)]
+        # the same switch on its connector pair: pin N on A here, pin N on B on the column
+        k = r * len(cols) + c
+        pa, pb = generate.pair_refs(k // generate.PAIR_PINS)
+        ppin = str(k % generate.PAIR_PINS + 1)
+        on_a = (pa, ppin) in nodes
+        on_b = (pb, ppin) in pcb.get(generate.col_net(c), set())
+        if len(diode) != 1 or len(term) != 1 or len(nodes) != 3 or not on_a or not on_b:
+            fail(f"switch {k + 1} ({net}): needs terminal, diode anode, {pa}.{ppin} and {pb}.{ppin} on "
+                 f"{generate.col_net(c)}; has {sorted(nodes)}")
             continue
         cathode_net = [n for n, ns in pcb.items() if (diode[0], "1") in ns]
         if cathode_net != [generate.row_net(r)]:
@@ -122,7 +129,8 @@ def check_firmware(pcb):
     if len(seen) != len(rows) * len(cols):
         fail(f"only {len(seen)} of {len(rows) * len(cols)} switches are wired")
     else:
-        print(f"Matrix: {len(rows)} rows x {len(cols)} columns, {len(seen)} switches, one diode each, matches board config")
+        print(f"Matrix: {len(rows)} rows x {len(cols)} columns, {len(seen)} switches, one diode each, "
+              f"on terminals and connector pairs in order, matches board config")
 
 
 def fab():

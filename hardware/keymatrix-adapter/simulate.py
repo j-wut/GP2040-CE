@@ -15,7 +15,7 @@ Every row and column is modelled from the RP2040 pin to the switch:
                as an LC ladder with the switches tapped along it
 
 The scan follows the firmware: pull a row low, wait the settle time (5 us),
-read the columns, release the row, wait the row delay (40 us by default, set in
+read the columns, release the row, wait the row delay (50 us by default, set in
 the web config), then the next row.
 
 For each wiring length it reports:
@@ -42,7 +42,7 @@ import generate  # noqa: E402
 VDD, VIL, VIH = 3.3, 0.8, 2.0
 ROWS, COLS = len(generate.ROW_GPIOS), len(generate.COL_GPIOS)
 SETTLE_US = 5          # KEY_MATRIX_SETTLE_MICROS
-ROW_DELAY_US = 40      # KEY_MATRIX_ROW_DELAY_MICROS
+ROW_DELAY_US = 50      # KEY_MATRIX_ROW_DELAY_MICROS
 CODE_US = 1.0          # loop overhead per row (GPIO calls, reads), rough
 RON = 40               # RP2040 output low resistance
 PIN_C = 5e-12          # RP2040 pin capacitance
