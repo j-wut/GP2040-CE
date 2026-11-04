@@ -53,11 +53,19 @@ still there and LED and display layouts keep working.
 | 3 (pins 37-47) | E6 | E7 | E8 | E9 | E10 | E11 | E12 | Fn | - | - | - |
 | 4 (pins 48-58) | - | - | - | - | - | - | - | - | - | - | - |
 
+## Profiles, boot modes and LEDs
+
+Matrix switches are input pins everywhere in the firmware:
+
+- **Profiles:** each profile can map the switches its own way (Add-ons > Keyboard Matrix, pick the profile). A
+  profile without its own switch mappings uses profile 1's.
+- **Boot modes:** any switch can be part of a boot-mode button combo (Boot Input Modes page).
+- **LEDs:** a light can be tied to any switch, and every switch has its own static colors per LED profile.
+
+The saved settings area grows from 32 KB to 40 KB for this. It is at the end of flash, so settings saved by older
+firmware are kept on upgrade.
+
 ## Limits
 
 - The firmware tracks inputs in a 64-bit pin mask. Matrix switches use the bits of the row/column GPIOs plus the bits
   above the real GPIOs (30-63), so a matrix on N pins gets at most N + 34 switches.
-- Switch mappings are shared by all profiles.
-- Boot-mode button combos work with matrix switches on pins 0-31, which covers every switch that replaces a breakout
-  button. The boot-mode page in the web config only lists pins up to 29, so switches on pins 30-31 can't be picked
-  there, and switches on pins 32-63 can't be part of a boot combo.

@@ -37,6 +37,7 @@ export default {
 		'gpio-pin-tied-label': 'GPIO Pin tied to Light',
 		'case-id-option': 'Case ID {{index}}',
 		'gpio-pin-option': 'GPIO Pin {{index}}',
+		'matrix-switch-option': 'Matrix switch {{name}} (pin {{index}})',
 		'input-source-label': 'Input Source',
 		'input-source-gpio': 'GPIO Pin',
 		'input-source-hall-effect': 'Hall Effect Sensor',

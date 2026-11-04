@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "pico.h" // NUM_BANK0_GPIOS
+#include "types.h" // NUM_INPUT_PINS
 #include "enums.pb.h"
 
 // Hall Effect sensors that can drive a light; matches ext*StaticColors max_size in config.proto
@@ -28,7 +29,7 @@ inline bool IsValidLightInput(LightInputSource source, uint32_t index)
 {
   switch(source)
   {
-    case LightInputSource::LightInputSource_GPIO:       return index < NUM_BANK0_GPIOS;
+    case LightInputSource::LightInputSource_GPIO:       return index < NUM_INPUT_PINS; // keyboard matrix switches included
     case LightInputSource::LightInputSource_HallEffect: return index < MAX_EXT_INPUT_LIGHT_COLOR_INDEXES;
     default:                                            return false;
   }

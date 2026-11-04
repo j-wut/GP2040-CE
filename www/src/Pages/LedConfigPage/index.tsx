@@ -43,6 +43,7 @@ import {
 	PRESSED_CONTEXT_PARAM_EFFECTS,
 } from '../../Data/Animations';
 import boards from '../../Data/Boards.json';
+import { NUM_INPUT_PINS } from '../../Data/KeyMatrixSwitches';
 import {
 	LED_FORMATS,
 	MAX_EXT_INPUT_LIGHT_COLOR_INDEXES,
@@ -215,8 +216,8 @@ const emptyAnimationProfile = {
 	baseCycleTime: 5,
 	basePressedCycleTime: 5,
 	baseCaseCycleTime: 5,
-	notPressedStaticColors: Array.from({ length: GPIO_PIN_LENGTH }, () => 0),
-	pressedStaticColors: Array.from({ length: GPIO_PIN_LENGTH }, () => 1),
+	notPressedStaticColors: Array.from({ length: NUM_INPUT_PINS }, () => 0),
+	pressedStaticColors: Array.from({ length: NUM_INPUT_PINS }, () => 1),
 	extNotPressedStaticColors: Array.from(
 		{ length: MAX_EXT_INPUT_LIGHT_COLOR_INDEXES },
 		() => 0,

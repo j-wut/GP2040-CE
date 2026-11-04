@@ -35,6 +35,10 @@ import {
 	isExtInputLight,
 } from '../../Data/Leds';
 import boards from '../../Data/Boards.json';
+import {
+	matrixSwitchName,
+	useKeyMatrixSwitches,
+} from '../../Data/KeyMatrixSwitches';
 
 import { rgbIntToHex } from '../../Services/Utilities';
 import ColorSelector from './ColorSelector';
@@ -88,6 +92,7 @@ export default function LightCoordsSection({
 }) {
 	const { dimensions, containerRef } = useGetContainerDimensions();
 	const { t } = useTranslation('');
+	const matrixSwitches = useKeyMatrixSwitches();
 
 	const gridId = useId();
 	const smallGridId = `${gridId}-small`;
@@ -411,15 +416,44 @@ export default function LightCoordsSection({
 									) : (
 										<>
 											{Array.from({ length: GPIO_PIN_LENGTH }).map(
-												(_, pinIndex) => (
-													<option key={pinIndex} value={pinIndex}>
+												(_, pinIndex) => {
+													const matrixSwitch = matrixSwitches.find(
+														({ pin }) => pin === pinIndex,
+													);
+													return (
+														<option key={pinIndex} value={pinIndex}>
+															{matrixSwitch
+																? t(
+																		'LedConfigPage:lightCoordsSection.matrix-switch-option',
+																		{
+																			name: matrixSwitchName(matrixSwitch),
+																			index: pinIndex,
+																		},
+																	)
+																: t(
+																		'LedConfigPage:lightCoordsSection.gpio-pin-option',
+																		{ index: pinIndex },
+																	)}
+														</option>
+													);
+												},
+											)}
+											{matrixSwitches
+												.filter(({ pin }) => pin >= GPIO_PIN_LENGTH)
+												.map((matrixSwitch) => (
+													<option
+														key={matrixSwitch.pin}
+														value={matrixSwitch.pin}
+													>
 														{t(
-															'LedConfigPage:lightCoordsSection.gpio-pin-option',
-															{ index: pinIndex },
+															'LedConfigPage:lightCoordsSection.matrix-switch-option',
+															{
+																name: matrixSwitchName(matrixSwitch),
+																index: matrixSwitch.pin,
+															},
 														)}
 													</option>
-												),
-											)}
+												))}
 										</>
 									)}
 								</FormSelect>

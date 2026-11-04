@@ -476,21 +476,22 @@ GP2040::BootAction GP2040::getGpioMappedBootAction() {
 	KeyMatrix::getInstance().scan();
 	Mask_t gpio = Storage::getInstance().getPressedGpios() & buttonGpios;
 
-	if (gpio == bootModeOptions.usbModePinMask) {
+	if (gpio == Storage::getBootModeMask(bootModeOptions.usbModePinMask, bootModeOptions.usbModePinMaskHigh)) {
 		action.type = BootActionType::ENTER_USB_MODE;
 		return action;
 	}
 
-	if (gpio == bootModeOptions.webConfigPinMask) {
+	if (gpio == Storage::getBootModeMask(bootModeOptions.webConfigPinMask, bootModeOptions.webConfigPinMaskHigh)) {
 		action.inputMode = InputMode::INPUT_MODE_CONFIG;
 		return action;
 	}
 
 	for (size_t i = 0; i < bootModeOptions.inputModeMappings_count; i++) {
 		InputModeMapping m = bootModeOptions.inputModeMappings[i];
-		if (m.pinMask < 0)
+		// -1 marks a disabled mapping (pin 31 alone makes the low half negative too)
+		if (m.pinMask == -1)
 			continue;
-		if (gpio == static_cast<Mask_t>(m.pinMask)) {
+		if (gpio == Storage::getBootModeMask(m.pinMask, m.pinMaskHigh)) {
 			action.inputMode = static_cast<InputMode>(m.inputMode);
 			if (m.profileNumber > 0) {
 				action.profileNumber = m.profileNumber;

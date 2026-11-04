@@ -15,13 +15,31 @@ import {
 	OptionType,
 	selectionToMapping,
 } from '../Data/PinMappingOptions';
-import { MaskPayload } from '../Store/useProfilesStore';
+import useProfilesStore, {
+	MAX_PROFILES,
+	MaskPayload,
+} from '../Store/useProfilesStore';
+import { NUM_INPUT_PINS } from '../Data/KeyMatrixSwitches';
 
-const NUM_INPUT_PINS = 64;
 const UNMAPPED: MaskPayload = {
 	action: BUTTON_ACTIONS.NONE,
 	customButtonMask: 0,
 	customDpadMask: 0,
+};
+
+// Switch mappings travel packed, the way the firmware saves them:
+// action + 10 in bits 0-7, the d-pad mask in bits 8-15, and the button mask apart.
+type PackedProfile = {
+	custom: boolean;
+	actions: number[];
+	buttonMasks: number[];
+};
+
+// Profile 1 always has its own mappings. Profiles 2-6 either have their own
+// ("custom") or use profile 1's.
+type MatrixProfile = {
+	custom: boolean;
+	mappings: MaskPayload[];
 };
 
 type KeyMatrixOptions = {
@@ -31,8 +49,26 @@ type KeyMatrixOptions = {
 	firstVirtualPin: number;
 	rowPins: number[];
 	colPins: number[];
-	switchMappings: MaskPayload[];
+	profiles: MatrixProfile[];
 };
+
+const unpackProfile = ({ custom, actions, buttonMasks }: PackedProfile) => ({
+	custom,
+	mappings: actions.map((packed, i) => ({
+		action: (packed & 0xff) - 10,
+		customDpadMask: (packed >> 8) & 0xff,
+		customButtonMask: buttonMasks[i] ?? 0,
+	})),
+});
+
+const packProfile = ({ custom, mappings }: MatrixProfile): PackedProfile => ({
+	custom,
+	actions: mappings.map(
+		({ action, customDpadMask }) =>
+			((action + 10) & 0xff) | ((customDpadMask & 0xff) << 8),
+	),
+	buttonMasks: mappings.map(({ customButtonMask }) => customButtonMask >>> 0),
+});
 
 const parsePins = (text: string): number[] | null => {
 	const parts = text
@@ -66,6 +102,8 @@ const KeyMatrix = () => {
 	const [rowText, setRowText] = useState('');
 	const [colText, setColText] = useState('');
 	const [message, setMessage] = useState('');
+	const [profileIndex, setProfileIndex] = useState(0);
+	const { profiles: pinProfiles, fetchProfiles } = useProfilesStore();
 
 	const { buttonLabelType, swapTpShareLabels } = buttonLabels;
 	const buttonNames = omit(
@@ -74,9 +112,18 @@ const KeyMatrix = () => {
 	);
 
 	useEffect(() => {
-		WebApi.getKeyMatrixOptions().then((data: KeyMatrixOptions) => {
+		fetchProfiles();
+		WebApi.getKeyMatrixOptions().then((data) => {
 			if (!data) return;
-			setOptions(data);
+			const profiles: MatrixProfile[] = Array.from(
+				{ length: MAX_PROFILES },
+				(_, i) =>
+					data.profiles?.[i]
+						? unpackProfile(data.profiles[i])
+						: { custom: i === 0, mappings: [] },
+			);
+			profiles[0].custom = true;
+			setOptions({ ...data, profiles });
 			setRowText(data.rowPins.join(', '));
 			setColText(data.colPins.join(', '));
 		});
@@ -95,11 +142,28 @@ const KeyMatrix = () => {
 
 	if (!options) return null;
 
-	const setMapping = (index: number, mapping: MaskPayload) => {
-		const switchMappings = [...options.switchMappings];
-		switchMappings[index] = mapping;
-		setOptions({ ...options, switchMappings });
+	const setProfile = (index: number, profile: MatrixProfile) => {
+		const profiles = [...options.profiles];
+		profiles[index] = profile;
+		setOptions({ ...options, profiles });
 	};
+
+	const profile = options.profiles[profileIndex];
+	// a profile without its own mappings shows (and starts from) profile 1's
+	const shownMappings = profile.custom
+		? profile.mappings
+		: options.profiles[0].mappings;
+
+	const setMapping = (index: number, mapping: MaskPayload) => {
+		const mappings = [...shownMappings];
+		while (mappings.length < index) mappings.push(UNMAPPED);
+		mappings[index] = mapping;
+		setProfile(profileIndex, { custom: true, mappings });
+	};
+
+	const getProfileName = (index: number) =>
+		pinProfiles[index]?.profileLabel ||
+		t('KeyMatrix:profile-option', { number: index + 1 });
 
 	const getOptionLabel = (option: OptionType) => {
 		const key = option.label?.split('BUTTON_PRESS_')?.pop();
@@ -117,6 +181,7 @@ const KeyMatrix = () => {
 				...options,
 				rowPins,
 				colPins,
+				profiles: options.profiles.map(packProfile),
 			});
 			if (response?.data?.error) {
 				setMessage(response.data.error);
@@ -212,6 +277,43 @@ const KeyMatrix = () => {
 								count: switchPins.length,
 							})}
 				</p>
+				<Row className="mb-3 align-items-end">
+					<Form.Group as={Col} sm={4}>
+						<Form.Label>{t('KeyMatrix:profile-label')}</Form.Label>
+						<Form.Select
+							size="sm"
+							value={profileIndex}
+							onChange={(e) => setProfileIndex(parseInt(e.target.value, 10))}
+						>
+							{options.profiles.map((_, index) => (
+								<option key={`matrix-profile-${index}`} value={index}>
+									{getProfileName(index)}
+									{pinProfiles[index] && !pinProfiles[index].enabled
+										? ` (${t('KeyMatrix:profile-disabled')})`
+										: ''}
+								</option>
+							))}
+						</Form.Select>
+					</Form.Group>
+					{profileIndex > 0 && (
+						<Col sm={8}>
+							<FormCheck
+								type="switch"
+								id="KeyMatrixProfileCustom"
+								label={t('KeyMatrix:profile-custom-label', {
+									base: getProfileName(0),
+								})}
+								checked={profile.custom}
+								onChange={() =>
+									setProfile(profileIndex, {
+										custom: !profile.custom,
+										mappings: [...options.profiles[0].mappings],
+									})
+								}
+							/>
+						</Col>
+					)}
+				</Row>
 				<div
 					className="d-grid gap-2 mb-3"
 					style={{
@@ -219,7 +321,7 @@ const KeyMatrix = () => {
 					}}
 				>
 					{switchPins.map((pin, index) => {
-						const mapping = options.switchMappings[index] ?? UNMAPPED;
+						const mapping = shownMappings[index] ?? UNMAPPED;
 						return (
 							<div
 								key={`matrix-switch-${index}`}

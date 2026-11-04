@@ -665,7 +665,7 @@ bool ConfigUtils::fromLegacyStorage(Config& config)
 
     const auto bytePinToIntPin = [](uint8_t pin) -> int32_t { return pin == 0xFF ? -1 : pin; };
 
-    const ConfigLegacy::GamepadOptions& legacyGamepadOptions = *reinterpret_cast<ConfigLegacy::GamepadOptions*>(EEPROM_ADDRESS_START + GAMEPAD_STORAGE_INDEX);
+    const ConfigLegacy::GamepadOptions& legacyGamepadOptions = *reinterpret_cast<ConfigLegacy::GamepadOptions*>(LEGACY_EEPROM_ADDRESS_START + GAMEPAD_STORAGE_INDEX);
     if (legacyGamepadOptions.checksum == computeChecksum(reinterpret_cast<const char*>(&legacyGamepadOptions), sizeof(ConfigLegacy::GamepadOptions), offsetof(ConfigLegacy::GamepadOptions, checksum)))
     {
         legacyConfigFound = true;
@@ -767,7 +767,7 @@ bool ConfigUtils::fromLegacyStorage(Config& config)
         }
     }
 
-    const ConfigLegacy::BoardOptions& legacyBoardOptions = *reinterpret_cast<ConfigLegacy::BoardOptions*>(EEPROM_ADDRESS_START + BOARD_STORAGE_INDEX);
+    const ConfigLegacy::BoardOptions& legacyBoardOptions = *reinterpret_cast<ConfigLegacy::BoardOptions*>(LEGACY_EEPROM_ADDRESS_START + BOARD_STORAGE_INDEX);
     if (legacyBoardOptions.checksum == computeChecksum(reinterpret_cast<const char*>(&legacyBoardOptions), sizeof(ConfigLegacy::BoardOptions), offsetof(ConfigLegacy::BoardOptions, checksum)))
     {
         legacyConfigFound = true;
@@ -825,7 +825,7 @@ bool ConfigUtils::fromLegacyStorage(Config& config)
         SET_PROPERTY(displayOptions, displaySaverTimeout, legacyBoardOptions.displaySaverTimeout);
     }
 
-    const ConfigLegacy::LEDOptions& legacyLEDOptions = *reinterpret_cast<ConfigLegacy::LEDOptions*>(EEPROM_ADDRESS_START + LED_STORAGE_INDEX);
+    const ConfigLegacy::LEDOptions& legacyLEDOptions = *reinterpret_cast<ConfigLegacy::LEDOptions*>(LEGACY_EEPROM_ADDRESS_START + LED_STORAGE_INDEX);
     if (legacyLEDOptions.checksum == computeChecksum(reinterpret_cast<const char*>(&legacyLEDOptions), sizeof(ConfigLegacy::LEDOptions), offsetof(ConfigLegacy::LEDOptions, checksum)) &&
         legacyLEDOptions.useUserDefinedLEDs)
     {
@@ -874,7 +874,7 @@ bool ConfigUtils::fromLegacyStorage(Config& config)
         SET_PROPERTY(ledOptions, pledColor, legacyLEDOptions.pledColor.value(LED_FORMAT_RGB));
     }
 
-    const ConfigLegacy::AddonOptions& legacyAddonOptions = *reinterpret_cast<ConfigLegacy::AddonOptions*>(EEPROM_ADDRESS_START + ADDON_STORAGE_INDEX);
+    const ConfigLegacy::AddonOptions& legacyAddonOptions = *reinterpret_cast<ConfigLegacy::AddonOptions*>(LEGACY_EEPROM_ADDRESS_START + ADDON_STORAGE_INDEX);
     if (legacyAddonOptions.checksum == computeChecksum(reinterpret_cast<const char*>(&legacyAddonOptions), sizeof(ConfigLegacy::AddonOptions), offsetof(ConfigLegacy::AddonOptions, checksum)))
     {
         legacyConfigFound = true;
@@ -1001,7 +1001,7 @@ bool ConfigUtils::fromLegacyStorage(Config& config)
         SET_PROPERTY(ps4Options, enabled, legacyAddonOptions.PS4ModeAddonEnabled);
     }
 
-    const ConfigLegacy::PS4Options& legacyPS4Options = *reinterpret_cast<ConfigLegacy::PS4Options*>(EEPROM_ADDRESS_START + PS4_STORAGE_INDEX);
+    const ConfigLegacy::PS4Options& legacyPS4Options = *reinterpret_cast<ConfigLegacy::PS4Options*>(LEGACY_EEPROM_ADDRESS_START + PS4_STORAGE_INDEX);
     if (legacyPS4Options.checksum == NOCHECKSUM_MAGIC)
     {
         legacyConfigFound = true;
@@ -1023,7 +1023,7 @@ bool ConfigUtils::fromLegacyStorage(Config& config)
         SET_PROPERTY_BYTES(ps4Options, rsaRN, legacyPS4Options.rsa_rn);
     }
 
-    const ConfigLegacy::SplashImage& legacySplashImage = *reinterpret_cast<ConfigLegacy::SplashImage*>(EEPROM_ADDRESS_START + SPLASH_IMAGE_STORAGE_INDEX);
+    const ConfigLegacy::SplashImage& legacySplashImage = *reinterpret_cast<ConfigLegacy::SplashImage*>(LEGACY_EEPROM_ADDRESS_START + SPLASH_IMAGE_STORAGE_INDEX);
     if (legacySplashImage.checksum == computeChecksum(reinterpret_cast<const char*>(&legacySplashImage), sizeof(ConfigLegacy::SplashImage), offsetof(ConfigLegacy::SplashImage, checksum)))
     {
         legacyConfigFound = true;

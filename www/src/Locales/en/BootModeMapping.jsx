@@ -6,6 +6,7 @@ export default {
 	'alert-text':
 		"It's recommended that you use the 🎮 button to select pins as mapping pins that aren't connected or available can leave the device in non-functional state. To clear the invalid configuration go to the <0>Reset Settings</0> page.",
 	'unique-validation-err': 'Mapped GPIO pins cannot contain duplicates',
+	'matrix-switch': 'matrix switch {{name}}',
 	'required-validation-err': 'Required fields are missing',
 	'generic-save-err': 'Failed to save changes',
 };

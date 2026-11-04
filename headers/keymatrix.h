@@ -24,8 +24,8 @@ static_assert(_GpioAction_MAX <= 245, "GpioAction no longer fits the packed matr
  * columns are read with pull-ups, so every switch is read on every scan.
  */
 
-// Total input pins the firmware tracks, bounded by the width of Mask_t.
-#define NUM_INPUT_PINS 64
+// NUM_INPUT_PINS (types.h) is bounded by the width of Mask_t.
+static_assert(NUM_INPUT_PINS <= sizeof(Mask_t) * 8, "input pins must fit the pin mask");
 // Input pins above the real GPIOs.
 #define NUM_VIRTUAL_PINS (NUM_INPUT_PINS - NUM_BANK0_GPIOS)
 
@@ -68,10 +68,10 @@ static_assert(_GpioAction_MAX <= 245, "GpioAction no longer fits the packed matr
 
 #define KEY_MATRIX_MAX_DELAY_MICROS 1000
 
-// A matrix switch mapping is packed to fit the saved config:
-//   switchActions[n]      bits 0-7  GpioAction + 10 (NONE = -10 packs to 0)
-//                         bits 8-15 customDpadMask
-//   switchButtonMasks[n]  customButtonMask
+// A matrix switch mapping is packed to fit the saved config (in each profile's GpioMappings):
+//   matrixSwitchActions[n]      bits 0-7  GpioAction + 10 (NONE = -10 packs to 0)
+//                               bits 8-15 customDpadMask
+//   matrixSwitchButtonMasks[n]  customButtonMask
 static inline uint32_t packSwitchAction(GpioAction action, uint32_t dpadMask) {
     return (uint32_t)(uint8_t)((int32_t)action + 10) | ((dpadMask & 0xFF) << 8);
 }
