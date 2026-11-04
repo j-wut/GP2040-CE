@@ -6,7 +6,8 @@ the I2C display and the toggle/option connectors are unchanged.
 
 ## Wiring
 
-The easiest way is the [key matrix diode adapter](../../hardware/keymatrix-adapter): it plugs into the 20-pin header
+The easiest way is the [key matrix diode adapter](https://github.com/j-wut/gp2040-hardware/tree/main/Boards/Supported%20Boards/Key%20Matrix%20Diode%20Adapter)
+(in gp2040-hardware): it plugs into the 20-pin header
 with a ribbon cable and has a screw terminal and a diode for every switch.
 
 To wire it by hand, connect each switch between one **row** and one **column**, not to ground. For full N-key
@@ -20,21 +21,21 @@ column terminal ──── switch ────►|──── row terminal
 
 | Role    | GPIO | Terminal | 20-pin header pin |
 |---------|------|----------|----|
-| Column 1 | 5 | K4 | 16 |
-| Column 2 | 6 | K3 | 15 |
-| Column 3 | 7 | K2 | 14 |
-| Column 4 | 8 | K1 | 13 |
-| Column 5 | 9 | P4 | 11 |
-| Column 6 | 10 | P3 | 10 |
-| Column 7 | 11 | P2 | 9 |
-| Column 8 | 12 | P1 | 8 |
-| Column 9 | 13 | S2 | 7 |
-| Column 10 | 14 | A1 | 6 |
-| Column 11 | 15 | S1 | 5 |
-| Row 1 | 16 | L | 4 |
-| Row 2 | 17 | R | 3 |
-| Row 3 | 18 | D | 2 |
-| Row 4 | 19 | U | 1 |
+| Column 1 | 5 | K4 | 5 |
+| Column 2 | 6 | K3 | 6 |
+| Column 3 | 7 | K2 | 7 |
+| Column 4 | 8 | K1 | 8 |
+| Column 5 | 9 | P4 | 10 |
+| Column 6 | 10 | P3 | 11 |
+| Column 7 | 11 | P2 | 12 |
+| Column 8 | 12 | P1 | 13 |
+| Column 9 | 13 | S2 | 14 |
+| Column 10 | 14 | A1 | 15 |
+| Column 11 | 15 | S1 | 16 |
+| Row 1 | 16 | L | 17 |
+| Row 2 | 17 | R | 18 |
+| Row 3 | 18 | D | 19 |
+| Row 4 | 19 | U | 20 |
 
 Only 4 rows are scanned, so a full scan takes about 4 x (settle + row delay + 1 us), about 224 us with the defaults.
 

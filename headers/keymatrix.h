@@ -61,7 +61,8 @@ static_assert(NUM_INPUT_PINS <= sizeof(Mask_t) * 8, "input pins must fit the pin
 // columns that row pulled low climb back up through the weak pull-ups; with
 // long wiring that takes a few microseconds, and a read before then shows a
 // phantom press on the next row. Set in the web config (see docs/keymatrix-sim
-// and hardware/keymatrix-adapter/simulate.py for how long wiring needs).
+// and the key matrix diode adapter's simulate.py in gp2040-hardware for how
+// long wiring needs).
 #ifndef KEY_MATRIX_ROW_DELAY_MICROS
 #define KEY_MATRIX_ROW_DELAY_MICROS 50
 #endif

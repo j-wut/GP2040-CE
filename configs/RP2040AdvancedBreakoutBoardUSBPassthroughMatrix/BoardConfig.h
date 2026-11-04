@@ -15,7 +15,8 @@
 //
 // All 15 button pins on the 20-pin header are wired as a 4 x 11 switch matrix
 // (44 switches). Only 4 rows are scanned, so a full scan is short. The matching
-// diode adapter board (hardware/keymatrix-adapter) plugs into the 20-pin
+// diode adapter board (gp2040-hardware: Boards/Supported Boards/Key Matrix
+// Diode Adapter) plugs into the 20-pin
 // header and has a diode per switch. Without the adapter, wire every switch in
 // series with its own diode (e.g. 1N4148), stripe toward the ROW wire, between
 // a row and a column.
