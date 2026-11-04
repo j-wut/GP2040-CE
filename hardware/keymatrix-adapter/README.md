@@ -1,14 +1,14 @@
 # Key matrix diode adapter
 
-A board that turns the 20-pin header of the **RP2040 Advanced Breakout Board (USB Passthrough edition)** into 48
-matrix switch inputs with full N-key rollover. It goes with the
+A board that turns the 20-pin header of the **RP2040 Advanced Breakout Board (USB Passthrough edition)** into 44
+matrix switch inputs with full N-key rollover: all 15 button pins as 4 rows x 11 columns. It goes with the
 [RP2040AdvancedBreakoutBoardUSBPassthroughMatrix](../../configs/RP2040AdvancedBreakoutBoardUSBPassthroughMatrix)
 firmware config.
 
-- 156 x 112 mm, 2 layers, all through-hole connectors plus 48 SOD-123 diodes.
+- 156 x 112 mm, 2 layers, all through-hole connectors plus 44 SOD-123 diodes.
 - **J1** connects to the breakout board's 20-pin header with a straight 20-pin IDC ribbon cable (pin 1 to pin 1).
 - **J2-J7** are three pairs of 20-pin switch connectors (A and B).
-- **J8-J17** are screw terminals: two per switch, in the same order as the connector pins.
+- **J8-J16** are screw terminals: two per switch, in the same order as the connector pins.
 - One 1N4148W diode per switch, already on the board. No diodes are needed in the wiring.
 
 ## How a switch is wired
@@ -28,8 +28,7 @@ Do not plug a normal 20-pin button harness (buttons wired to ground) into the sw
 All three pairs have the same order. **Pair 1 follows the breakout's 20-pin header.** Each of its 15 button pins
 carries the switch that defaults to that pin's button, so a harness made for the breakout's pinout lines up:
 
-- Pin 16 is K4 (L2), pin 8 is P1 (B3), and so on.
-- Pin 1 (U) is GPIO 19, still a direct button. Its B pin is GND.
+- Pin 16 is K4 (L2), pin 8 is P1 (B3), pin 1 is U (Up), and so on.
 
 The breakout's 5 power and ground positions (pins 12 and 17-20) carry five more switches. Pairs 2 and 3 carry the
 rest in row order. R*n*C*m* is the switch in row *n*, column *m*, as listed in the web config (Add-ons > Keyboard
@@ -37,47 +36,47 @@ Matrix).
 
 | Pin | Pair 1 (J2 A / J3 B) | Pair 2 (J4 A / J5 B) | Pair 3 (J6 A / J7 B) |
 |-----|-----|-----|-----|
-| 1 | U (GPIO 19 direct, B = GND) | R3C4 | R5C8 |
-| 2 | D (R2C6) | R3C5 | R6C1 |
-| 3 | R (R2C5) | R3C6 | R6C2 |
-| 4 | L (R2C4) | R3C7 | R6C3 |
-| 5 | S1 (R2C3) | R3C8 | R6C4 |
-| 6 | A1 (R2C2) | R4C1 | R6C5 |
-| 7 | S2 (R2C1) | R4C2 | R6C6 |
-| 8 | P1 (R1C8) | R4C3 | R6C7 |
-| 9 | P2 (R1C7) | R4C4 | R6C8 |
-| 10 | P3 (R1C6) | R4C5 | - |
-| 11 | P4 (R1C5) | R4C6 | - |
-| 12 | R2C7 | R4C7 | - |
-| 13 | K1 (R1C4) | R4C8 | - |
-| 14 | K2 (R1C3) | R5C1 | - |
-| 15 | K3 (R1C2) | R5C2 | - |
-| 16 | K4 (R1C1) | R5C3 | - |
-| 17 | R2C8 | R5C4 | - |
-| 18 | R3C1 | R5C5 | - |
-| 19 | R3C2 | R5C6 | - |
-| 20 | R3C3 | R5C7 | - |
+| 1 | U (R2C4) | R2C10 | R4C8 |
+| 2 | D (R2C3) | R2C11 | R4C9 |
+| 3 | R (R2C2) | R3C1 | R4C10 |
+| 4 | L (R2C1) | R3C2 | R4C11 |
+| 5 | S1 (R1C11) | R3C3 | - |
+| 6 | A1 (R1C10) | R3C4 | - |
+| 7 | S2 (R1C9) | R3C5 | - |
+| 8 | P1 (R1C8) | R3C6 | - |
+| 9 | P2 (R1C7) | R3C7 | - |
+| 10 | P3 (R1C6) | R3C8 | - |
+| 11 | P4 (R1C5) | R3C9 | - |
+| 12 | R2C5 | R3C10 | - |
+| 13 | K1 (R1C4) | R3C11 | - |
+| 14 | K2 (R1C3) | R4C1 | - |
+| 15 | K3 (R1C2) | R4C2 | - |
+| 16 | K4 (R1C1) | R4C3 | - |
+| 17 | R2C6 | R4C4 | - |
+| 18 | R2C7 | R4C5 | - |
+| 19 | R2C8 | R4C6 | - |
+| 20 | R2C9 | R4C7 | - |
 
 The screw terminals hold the same slots in the same order, A then B:
 
 - pair 1 along the top edge, left to right
 - pair 2 along the bottom edge, left to right
-- pair 3 down the left edge, then down the right edge
+- pair 3 down the left edge
 
 Each slot is labelled on the silkscreen.
 
 GPIO 20-22 (A2, L3, R3 on the breakout's 4-pin harness) are not on the 20-pin header and stay ordinary buttons on
-the breakout board. Don't wire anything else to the breakout's own K1-K4, P1-P4, S1, S2, A1, L, R, D terminals
+the breakout board. Don't wire anything else to the breakout's own K1-K4, P1-P4, S1, S2, A1, L, R, D, U terminals
 while the adapter is connected: those GPIOs are matrix lines now.
 
 ## Signals
 
 | J1 pin | Signal | Breakout label | | J1 pin | Signal | Breakout label |
 |-----|--------|----|-|-----|--------|----|
-| 1   | GP19 direct | U  | | 2   | ROW6 (GP18) | D |
-| 3   | ROW5 (GP17) | R  | | 4   | ROW4 (GP16) | L |
-| 5   | ROW3 (GP15) | S1 | | 6   | ROW2 (GP14) | A1 |
-| 7   | ROW1 (GP13) | S2 | | 8   | COL8 (GP12) | P1 |
+| 1   | ROW4 (GP19) | U  | | 2   | ROW3 (GP18) | D |
+| 3   | ROW2 (GP17) | R  | | 4   | ROW1 (GP16) | L |
+| 5   | COL11 (GP15) | S1 | | 6   | COL10 (GP14) | A1 |
+| 7   | COL9 (GP13) | S2 | | 8   | COL8 (GP12) | P1 |
 | 9   | COL7 (GP11) | P2 | | 10  | COL6 (GP10) | P3 |
 | 11  | COL5 (GP9)  | P4 | | 12  | GND | G |
 | 13  | COL4 (GP8)  | K1 | | 14  | COL3 (GP7) | K2 |
@@ -107,29 +106,29 @@ Check pin 1 on your board before the first power-up.
 
 - KiCad DRC: no clearance or other violations, no unconnected pads.
 - The schematic netlist (from `kicad-cli`) connects exactly the same pads as the PCB.
-- Every one of the 48 switches has its own diode, cathode on the right row, and the rows and columns match
+- Every one of the 44 switches has its own diode, cathode on the right row, and the rows and columns match
   `KEY_MATRIX_ROW_PINS` / `KEY_MATRIX_COL_PINS` in the board config.
 - Every switch is on exactly one connector slot. Pair 1 is in breakout pin order. The screw terminals, read around
   the board, are in the same slot order as the connectors.
 
 ## Simulation
 
-`python3 simulate.py` runs ngspice on the whole 6 x 8 matrix through this board: RP2040 pull-ups and pins, the ribbon
-cable, the copper of every net on this PCB (measured from the board file), the 48 diodes, and the harness wiring
-(each switch's own wire plus the column's B wire daisy-chained through six switches). It scans the way the firmware
-does and checks every read for several held-switch patterns, including all 48 held. Results:
+`python3 simulate.py` runs ngspice on the whole 4 x 11 matrix through this board: RP2040 pull-ups and pins, the ribbon
+cable, the copper of every net on this PCB (measured from the board file), the 44 diodes, and the harness wiring
+(each switch's own wire plus the column's B wire daisy-chained through its four switches). It scans the way the firmware
+does and checks every read for several held-switch patterns, including all 44 held. Results:
 [sim-results.txt](sim-results.txt).
 
 | Wiring (ribbon / switch wire / column chain) | Press seen at the pin | Column recovery | Result with defaults |
 |-----|-----|-----|-----|
-| short: 0.15 m / 0.2 m / 1 m | 0.2 us | up to 14 us | pass |
-| typical arcade stick: 0.3 m / 0.5 m / 3 m | 0.3 us | up to 24 us | pass |
-| long cabinet: 1 m / 1 m / 6 m | 0.5 us | up to 40 us | pass |
+| short: 0.15 m / 0.2 m / 1 m | 0.2 us | up to 11 us | pass |
+| typical arcade stick: 0.3 m / 0.5 m / 3 m | 0.4 us | up to 20 us | pass |
+| long cabinet: 1 m / 1 m / 6 m | 0.6 us | up to 35 us | pass |
 
-Wire length adds no meaningful latency: a press shows up at the pin in about half a microsecond or less even with cabinet
+Wire length adds no meaningful latency: a press shows up at the pin in under 0.6 us even with cabinet
 wiring. What wiring does set is how long a released row's columns take to climb back through the RP2040's weak
 pull-ups. The firmware waits a fixed **row delay** after each row for that (default 50 us, set in the web config
-next to the settle time). With the defaults a full scan of all six rows takes about 336 us, well inside the 1 ms
+next to the settle time). With the defaults a full scan of all four rows takes about 224 us, well inside the 1 ms
 between USB reports. Shorter wiring can use a smaller row delay; see the table in
 [docs/keymatrix-sim/results.txt](../../docs/keymatrix-sim/results.txt).
 

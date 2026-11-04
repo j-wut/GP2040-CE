@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""ngspice simulation of the full 6 x 8 matrix through the diode adapter.
+"""ngspice simulation of the full matrix through the diode adapter.
 
 Every row and column is modelled from the RP2040 pin to the switch:
 
@@ -9,7 +9,7 @@ Every row and column is modelled from the RP2040 pin to the switch:
                (about 0.7 uH/m and 50 pF/m per conductor)
   adapter PCB  copper capacitance of each net, measured from keymatrix-adapter.kicad_pcb
                (track length, vias and pads)
-  diodes       the 48 1N4148W on the adapter, cathode to the row
+  diodes       one 1N4148W per switch on the adapter, cathode to the row
   harness      each switch's own wire (switch to its R terminal) and the column
                common wire daisy-chained through the six switches of a column,
                as an LC ladder with the switches tapped along it
@@ -23,7 +23,7 @@ For each wiring length it reports:
   - how long the columns take to recover after a row is released (the row
     delay must cover this)
   - whether every read is right with the default timing, for several held-switch
-    patterns (pressed < 0.8 V, open > 2.0 V on all 48 switches)
+    patterns (pressed < 0.8 V, open > 2.0 V on every switch)
 
 Usage: python3 simulate.py   (needs ngspice, and KiCad's Python module for the PCB numbers)
 """
@@ -67,11 +67,11 @@ SCENARIOS = {
     "ghost rectangle": {(0, 0), (0, 1), (1, 0)},
     "whole row": {(0, c) for c in range(COLS)},
     "whole column": {(r, 0) for r in range(ROWS)},
-    "everything (48 held)": set(itertools.product(range(ROWS), range(COLS))),
+    "everything held": set(itertools.product(range(ROWS), range(COLS))),
     "checkerboard": {(r, c) for r in range(ROWS) for c in range(COLS) if (r + c) % 2 == 0},
     # held on every other row: each held row is followed by an open one, the
     # worst case for a column recovering in time
-    "rows 1, 3, 5 held": {(r, c) for r in (0, 2, 4) for c in range(COLS)},
+    "every other row held": {(r, c) for r in range(0, ROWS, 2) for c in range(COLS)},
 }
 
 
@@ -197,13 +197,13 @@ def main():
     scan_us = ROWS * (SETTLE_US + ROW_DELAY_US + CODE_US)
     print(f"Timing: settle {SETTLE_US} us, row delay {ROW_DELAY_US} us -> full scan about {scan_us:.0f} us "
           f"(USB reports every 1000 us)")
-    print(f"Pass = pressed reads < {VIL} V and open reads > {VIH} V on all 48 switches, every pattern\n")
+    print(f"Pass = pressed reads < {VIL} V and open reads > {VIH} V on all {ROWS * COLS} switches, every pattern\n")
     print(f"{'wiring (ribbon / switch wire / column chain)':<46} {'pull-up':>7} {'press seen':>10} "
           f"{'recovery':>9} {'worst pressed':>13} {'worst open':>10}  result")
     ok = True
     for wiring, pullup in itertools.product(WIRING, PULLUPS):
         # timing of one press and one release, measured with a long gap
-        _, det, rec = simulate(SCENARIOS["rows 1, 3, 5 held"], wiring, pullup, caps, 100.0, cycles=1)
+        _, det, rec = simulate(SCENARIOS["every other row held"], wiring, pullup, caps, 100.0, cycles=1)
         worst_low, worst_high, fails = 0.0, VDD, []
         for name, pressed in SCENARIOS.items():
             reads, _, _ = simulate(pressed, wiring, pullup, caps, ROW_DELAY_US)

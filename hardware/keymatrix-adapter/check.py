@@ -112,9 +112,9 @@ def check_firmware(pcb):
 
     def slot_switch(a_net, b_net):
         """(kind, value) for the switch a pair of nets forms, checking its diode."""
-        if (a_net, b_net) == (f"GP{generate.DIRECT_GPIO}", "GND"):
+        if generate.DIRECT_GPIO is not None and (a_net, b_net) == (f"GP{generate.DIRECT_GPIO}", "GND"):
             return "gp19"
-        m = re.match(r"SW_R(\d)C(\d)$", a_net or "")
+        m = re.match(r"SW_R(\d+)C(\d+)$", a_net or "")
         if not m:
             return None
         r, c = int(m.group(1)) - 1, int(m.group(2)) - 1
@@ -147,8 +147,10 @@ def check_firmware(pcb):
                 got = sw if sw == "gp19" else input_pin(sw)
                 if (want or g) != got:
                     fail(f"pair 1 pin {pin} carries input pin {got}, breakout order needs GPIO {g}")
-    if len([s for s in seen if s != "gp19"]) != len(rows) * len(cols) or "gp19" not in seen:
-        fail(f"connectors carry {len(seen)} slots, expected all {len(rows) * len(cols)} switches + GPIO {generate.DIRECT_GPIO}")
+    want_direct = generate.DIRECT_GPIO is not None
+    if len([s for s in seen if s != "gp19"]) != len(rows) * len(cols) or ("gp19" in seen) != want_direct:
+        fail(f"connectors carry {len(seen)} slots, expected all {len(rows) * len(cols)} switches"
+             + (f" + GPIO {generate.DIRECT_GPIO}" if want_direct else ""))
     order = sorted(seen, key=lambda s: seen[s])
 
     # screw terminals: physical order around the board must be the same slot

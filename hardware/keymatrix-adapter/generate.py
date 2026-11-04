@@ -3,7 +3,7 @@
 
 The adapter plugs into the 20-pin header of the RP2040 Advanced Breakout Board
 (USB Passthrough edition) with a straight 20-pin IDC ribbon cable. It turns the
-14 button GPIOs on that header into a 6 x 8 diode matrix with one screw terminal
+15 button GPIOs on that header into a 4 x 11 diode matrix with one screw terminal
 and one diode per switch, matching the RP2040AdvancedBreakoutBoardUSBPassthroughMatrix
 board config.
 
@@ -31,9 +31,9 @@ KICAD_FP = "/usr/share/kicad/footprints"
 # Electrical design
 # ---------------------------------------------------------------------------
 
-COL_GPIOS = [5, 6, 7, 8, 9, 10, 11, 12]  # must match KEY_MATRIX_COL_PINS
-ROW_GPIOS = [13, 14, 15, 16, 17, 18]     # must match KEY_MATRIX_ROW_PINS
-DIRECT_GPIO = 19                          # left as a normal button (UP)
+COL_GPIOS = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]  # must match KEY_MATRIX_COL_PINS
+ROW_GPIOS = [16, 17, 18, 19]                          # must match KEY_MATRIX_ROW_PINS
+DIRECT_GPIO = None  # a header GPIO left as a normal button wired to GND, if any
 
 # Breakout board 20-pin header, pin number -> signal (see the board's pinout
 # image: pin 1 is next to "U", pins 19/20 are +5 V).
@@ -72,7 +72,7 @@ def gpio_net(gpio):
 # Switch connector pairs (A and B): pin N on A and pin N on B are the two sides
 # of one switch. Every pair has the same order. Pair 1 follows the breakout's
 # 20-pin header: each of its 15 button pins carries the switch that defaults to
-# that pin's button (U is GPIO 19, a direct button, wired to GND on B). Its 5
+# that pin's button (a direct button, if any, has GND on B). Its 5
 # power/ground positions and pairs 2-3 carry the other switches in row order.
 # The screw terminals repeat the same slots in the same order, A then B.
 PAIR_PINS = 20
@@ -102,7 +102,7 @@ def build_slots():
         if not sig.startswith("GP"):
             continue
         g = int(sig[2:])
-        if g == DIRECT_GPIO:
+        if DIRECT_GPIO is not None and g == DIRECT_GPIO:
             slots[(0, pin)] = ("gp19",)
         elif g in by_input:
             slots[(0, pin)] = ("sw", by_input[g])
@@ -303,12 +303,12 @@ def build_schematic(parts):
     text("Breakout board 20-pin header (straight IDC ribbon, pin 1 to pin 1)", 20.32, 25.4)
     hdr_txt = lambda y: dict(ref_at=(39.37, snap(y) - 15.24), val_at=(39.37, snap(y) + 15.24))
     place(byref["J1"], 38.1, 45.72, **hdr_txt(45.72))
-    text("Switch connector pairs: pin N on A and pin N on B are the two sides of one switch, same order on every pair.", 20.32, 195.58)
-    text("Pair 1 follows the breakout header: each button pin carries the switch that defaults to that button. Pin 1 (U) is GPIO 19 direct.", 20.32, 199.39)
+    text("Switch connector pairs: pin N on A and pin N on B are the two sides of one switch, same order on every pair.", 20.32, 205.74)
+    text("Pair 1 follows the breakout header: each button pin carries the switch that defaults to that button.", 20.32, 209.55)
     for p in range(NUM_PAIRS):
         for i, ref in enumerate(pair_refs(p)):
             x = 38.1 + (2 * p + i) * 63.5
-            place(byref[ref], x, 228.6, **dict(ref_at=(snap(x) + 1.27, 213.36), val_at=(snap(x) + 1.27, 243.84)))
+            place(byref[ref], x, 233.68, **dict(ref_at=(snap(x) + 1.27, 218.44), val_at=(snap(x) + 1.27, 248.92)))
     for i in range(4):
         place(byref[f"H{i + 1}"], 25.4 + i * 12.7, 165.1)
 
@@ -318,11 +318,11 @@ def build_schematic(parts):
         x = 101.6 + (i % 5) * 63.5
         y = 50.8 + (i // 5) * 50.8
         place(byref[ref], x, y, ref_at=(snap(x), snap(y) - 15.24), val_at=(snap(x), snap(y) + 17.78))
-    text("Diodes: one per switch, cathode (stripe) to the row. D1-D48 = switch R1C1 ... R6C8, 1N4148W SOD-123.", 88.9, 140.97)
+    text(f"Diodes: one per switch, cathode (stripe) to the row. D1-D{NUM_SWITCHES} = switch R1C1 ... R{len(ROW_GPIOS)}C{len(COL_GPIOS)}, 1N4148W SOD-123.", 88.9, 140.97)
     for p in parts:
         if p["ref"].startswith("D"):
             r, c = p["row"], p["col"]
-            x, y = 101.6 + c * 38.1, 151.13 + r * 6.35
+            x, y = 101.6 + r * 63.5, 147.32 + c * 5.08
             place(p, x, y, ref_at=(snap(x), snap(y) - 1.9), val_at=(snap(x) + 12, snap(y) + 30))
 
     out.append('(kicad_sch (version 20230121) (generator eeschema)\n')
@@ -462,8 +462,10 @@ def build_pcb(parts):
             ax, ay = pos(first + 2 * j * TERM_PITCH)
             cx, cy = pos(first + (2 * j + 0.5) * TERM_PITCH)
             pair, pin, item = SLOTS[start + j]
-            slot_label_pos.append((slot_label(pair, pin, item), cx + inward[0] * LABEL_IN,
-                                   cy + inward[1] * LABEL_IN))
+            # side labels are horizontal, so move them further in to clear the block
+            lin = LABEL_IN if edge in ("top", "bottom") else LABEL_IN + 1.4
+            slot_label_pos.append((slot_label(pair, pin, item), cx + inward[0] * lin,
+                                   cy + inward[1] * lin))
             if item[0] == "sw":
                 d = diode_of[slot_nets(item)[0]]
                 dx, dy = ax + inward[0] * DIODE_IN, ay + inward[1] * DIODE_IN
@@ -511,7 +513,7 @@ def build_pcb(parts):
     silk("GP2040-CE KEY MATRIX ADAPTER v1.2", BOARD_W / 2, ly2 + 3.0, 1.2, bold=True)
     silk("SWITCH: PIN N ON A <-> PIN N ON B, OR ITS TWO SCREW TERMINALS. PAIR 1 = BREAKOUT PIN ORDER",
          BOARD_W / 2, ly2 + 5.0, 0.9)
-    silk("TERMINALS: TOP = PAIR 1, BOTTOM = PAIR 2, LEFT THEN RIGHT = PAIR 3", BOARD_W / 2, ly2 + 6.8, 0.9)
+    silk("TERMINALS: TOP = PAIR 1, BOTTOM = PAIR 2, LEFT SIDE = PAIR 3", BOARD_W / 2, ly2 + 6.8, 0.9)
 
     path = os.path.join(HERE, NAME + ".kicad_pcb")
     board.SetFileName(path)

@@ -13,42 +13,40 @@
 
 // Keyboard-style switch matrix
 //
-// The 14 button pins on the 20-pin header are wired as a 6 x 8 switch matrix
-// (48 switches). The matching diode adapter board (hardware/keymatrix-adapter)
-// plugs into the 20-pin header and has a screw terminal and diode per switch.
-// Without the adapter, wire every switch in series with its own diode
-// (e.g. 1N4148), stripe toward the ROW wire, between a row and a column.
+// All 15 button pins on the 20-pin header are wired as a 4 x 11 switch matrix
+// (44 switches). Only 4 rows are scanned, so a full scan is short. The matching
+// diode adapter board (hardware/keymatrix-adapter) plugs into the 20-pin
+// header and has a diode per switch. Without the adapter, wire every switch in
+// series with its own diode (e.g. 1N4148), stripe toward the ROW wire, between
+// a row and a column.
 //
-//   Columns (8): GPIO 5  6  7  8  9  10 11 12   (terminals K4 K3 K2 K1 P4 P3 P2 P1)
-//   Rows    (6): GPIO 13 14 15 16 17 18         (terminals S2 A1 S1 L R D)
+//   Columns (11): GPIO 5  6  7  8  9  10 11 12 13 14 15  (K4 K3 K2 K1 P4 P3 P2 P1 S2 A1 S1)
+//   Rows     (4): GPIO 16 17 18 19                         (L R D U)
 //
-// UP (GPIO 19), A2 (20), L3 (21) and R3 (22) stay ordinary buttons wired to ground.
+// A2 (GPIO 20), L3 (21) and R3 (22) stay ordinary buttons wired to ground.
 //
-// Every switch is an input pin that is mapped like any other pin. Rows 1 and 2
-// reuse the pin numbers of the GPIOs they replace (5-18) with the standard
-// actions, so LED and display layouts keep working. The rest get input pins
-// 30 and up.
+// Every switch is an input pin that is mapped like any other pin. The first 15
+// switches reuse the pin numbers of the GPIOs they replace (5-19) with the
+// standard actions, so LED and display layouts keep working. The rest get
+// input pins 30 and up.
 #define KEY_MATRIX_ENABLED 1
-#define KEY_MATRIX_COL_PINS 5, 6, 7, 8, 9, 10, 11, 12
-#define KEY_MATRIX_ROW_PINS 13, 14, 15, 16, 17, 18
+#define KEY_MATRIX_COL_PINS 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
+#define KEY_MATRIX_ROW_PINS 16, 17, 18, 19
 #define KEY_MATRIX_PIN_ACTIONS \
-    /* row 1 (GPIO 13), pins 5-12  */ \
+    /* row 1 (GPIO 16), pins 5-15 */ \
     GpioAction::BUTTON_PRESS_L2, GpioAction::BUTTON_PRESS_R2, GpioAction::BUTTON_PRESS_B2, GpioAction::BUTTON_PRESS_B1, \
     GpioAction::BUTTON_PRESS_L1, GpioAction::BUTTON_PRESS_R1, GpioAction::BUTTON_PRESS_B4, GpioAction::BUTTON_PRESS_B3, \
-    /* row 2 (GPIO 14), pins 13-18, 30, 31 */ \
-    GpioAction::BUTTON_PRESS_S2, GpioAction::BUTTON_PRESS_A1, GpioAction::BUTTON_PRESS_S1, GpioAction::BUTTON_PRESS_LEFT, \
-    GpioAction::BUTTON_PRESS_RIGHT, GpioAction::BUTTON_PRESS_DOWN, GpioAction::BUTTON_PRESS_A3, GpioAction::BUTTON_PRESS_A4, \
-    /* row 3 (GPIO 15), pins 32-39 */ \
-    GpioAction::BUTTON_PRESS_E1, GpioAction::BUTTON_PRESS_E2, GpioAction::BUTTON_PRESS_E3, GpioAction::BUTTON_PRESS_E4, \
-    GpioAction::BUTTON_PRESS_E5, GpioAction::BUTTON_PRESS_E6, GpioAction::BUTTON_PRESS_E7, GpioAction::BUTTON_PRESS_E8, \
-    /* row 4 (GPIO 16), pins 40-47 */ \
-    GpioAction::BUTTON_PRESS_E9, GpioAction::BUTTON_PRESS_E10, GpioAction::BUTTON_PRESS_E11, GpioAction::BUTTON_PRESS_E12, \
+    GpioAction::BUTTON_PRESS_S2, GpioAction::BUTTON_PRESS_A1, GpioAction::BUTTON_PRESS_S1, \
+    /* row 2 (GPIO 17), pins 16-19, 30-36 */ \
+    GpioAction::BUTTON_PRESS_LEFT, GpioAction::BUTTON_PRESS_RIGHT, GpioAction::BUTTON_PRESS_DOWN, GpioAction::BUTTON_PRESS_UP, \
+    GpioAction::BUTTON_PRESS_A3, GpioAction::BUTTON_PRESS_A4, GpioAction::BUTTON_PRESS_E1, GpioAction::BUTTON_PRESS_E2, GpioAction::BUTTON_PRESS_E3, GpioAction::BUTTON_PRESS_E4, GpioAction::BUTTON_PRESS_E5, \
+    /* row 3 (GPIO 18), pins 37-47 */ \
+    GpioAction::BUTTON_PRESS_E6, GpioAction::BUTTON_PRESS_E7, GpioAction::BUTTON_PRESS_E8, GpioAction::BUTTON_PRESS_E9, GpioAction::BUTTON_PRESS_E10, GpioAction::BUTTON_PRESS_E11, GpioAction::BUTTON_PRESS_E12, \
     GpioAction::BUTTON_PRESS_FN, GpioAction::NONE, GpioAction::NONE, GpioAction::NONE
-    /* rows 5 and 6 (GPIO 17, 18), pins 48-63: unassigned */
+    /* row 4 (GPIO 19), pins 48-58: unassigned */
 
 // Direct (non-matrix) buttons
 //                                                  // GP2040 | Xinput | Switch  | PS3/4/5  | Dinput | Arcade |
-#define GPIO_PIN_19 GpioAction::BUTTON_PRESS_UP     // UP     | UP     | UP      | UP       | UP     | UP     |
 #define GPIO_PIN_20 GpioAction::BUTTON_PRESS_A2     // A2     | ~      | Capture | ~        | 14     | ~      |
 #define GPIO_PIN_21 GpioAction::BUTTON_PRESS_L3     // L3     | LS     | LS      | L3       | 11     | LS     |
 #define GPIO_PIN_22 GpioAction::BUTTON_PRESS_R3     // R3     | RS     | RS      | R3       | 12     | RS     |
@@ -75,6 +73,7 @@
 #define GPIO_PIN_16 GpioAction::ASSIGNED_TO_ADDON
 #define GPIO_PIN_17 GpioAction::ASSIGNED_TO_ADDON
 #define GPIO_PIN_18 GpioAction::ASSIGNED_TO_ADDON
+#define GPIO_PIN_19 GpioAction::ASSIGNED_TO_ADDON
 
 // Keyboard Mapping Configuration
 //                                            // GP2040 | Xinput | Switch  | PS3/4/5  | Dinput | Arcade |

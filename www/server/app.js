@@ -942,14 +942,14 @@ app.get('/api/getKeyMatrixOptions', (req, res) => {
 		settleMicros: 5,
 		rowDelayMicros: 50,
 		firstVirtualPin: 30,
-		rowPins: [13, 14, 15, 16, 17, 18],
-		colPins: [5, 6, 7, 8, 9, 10, 11, 12],
+		rowPins: [16, 17, 18, 19],
+		colPins: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
 		switchMappings: [
 			...[11, 12, 6, 5, 9, 10, 8, 7, 3, 4, 2, 1, 17, 18, 41, 42].map(
 				(action) => ({ action, customButtonMask: 0, customDpadMask: 0 }),
 			),
 			{ action: 40, customButtonMask: 3, customDpadMask: 0 },
-			...Array(47).fill({
+			...Array(43).fill({
 				action: -10,
 				customButtonMask: 0,
 				customDpadMask: 0,
@@ -970,7 +970,8 @@ app.get('/api/getKeyMatrixOptions', (req, res) => {
 			16,
 			17,
 			18,
-			...Array(34)
+			19,
+			...Array(29)
 				.fill(0)
 				.map((_, i) => 30 + i),
 		],
