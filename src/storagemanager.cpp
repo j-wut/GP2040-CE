@@ -205,18 +205,27 @@ void Storage::setBootModeFunctionalPinMappings()
 		mask |= mapping.pinMask;
 	}
 
+	// matrix switches can be part of a boot combo too (the mask covers pins 0-31)
+	const KeyMatrix& matrix = KeyMatrix::getInstance();
+	Mask_t switchPins = 0;
+	for (uint32_t i = 0; i < matrix.getSwitchCount(); i++) {
+		switchPins |= Mask_t{1} << matrix.getSwitchPin(i);
+	}
 	for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++) {
-		if (pins[pin].action != GpioAction::RESERVED &&
-			pins[pin].action != GpioAction::ASSIGNED_TO_ADDON &&
+		const bool isSwitch = (switchPins >> pin) & 1;
+		if ((isSwitch ||
+			 (pins[pin].action != GpioAction::RESERVED &&
+			  pins[pin].action != GpioAction::ASSIGNED_TO_ADDON)) &&
 			(mask & (1 << pin)))
 		{
 			// Just setting an arbitrary non-zero action
 			functionalPinMappings[pin].action = GpioAction::BUTTON_PRESS_A1;
 		}
 	}
-	// boot mode combos only use real GPIOs
 	for (Pin_t pin = (Pin_t)NUM_BANK0_GPIOS; pin < (Pin_t)NUM_INPUT_PINS; pin++) {
-		functionalPinMappings[pin].action = GpioAction::NONE;
+		const bool inMask = pin < 32 && (mask & (1u << pin));
+		functionalPinMappings[pin].action = (inMask && ((switchPins >> pin) & 1))
+			? GpioAction::BUTTON_PRESS_A1 : GpioAction::NONE;
 	}
 	setInvertedPins(getGpioMappings());
 }

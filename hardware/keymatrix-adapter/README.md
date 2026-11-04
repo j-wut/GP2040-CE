@@ -7,8 +7,9 @@ firmware config.
 
 - 156 x 112 mm, 2 layers, all through-hole connectors plus 44 SOD-123 diodes.
 - **J1** connects to the breakout board's 20-pin header with a straight 20-pin IDC ribbon cable (pin 1 to pin 1).
-- **J2-J7** are three pairs of 20-pin switch connectors (A and B).
-- **J8-J16** are screw terminals: two per switch, in the same order as the connector pins.
+- **J2-J5** are two pairs of 20-pin switch connectors (A and B).
+- **J6-J14** are screw terminals: two per switch, in the same order as the connector pins. The last 4 switches
+  are on screw terminals only.
 - One 1N4148W diode per switch, already on the board. No diodes are needed in the wiring.
 
 ## How a switch is wired
@@ -25,43 +26,45 @@ Do not plug a normal 20-pin button harness (buttons wired to ground) into the sw
 
 ## Slot order
 
-All three pairs have the same order. **Pair 1 follows the breakout's 20-pin header.** Each of its 15 button pins
+Both pairs have the same order. **Pair 1 follows the breakout's 20-pin header.** Each of its 15 button pins
 carries the switch that defaults to that pin's button, so a harness made for the breakout's pinout lines up:
 
 - Pin 16 is K4 (L2), pin 8 is P1 (B3), pin 1 is U (Up), and so on.
 
-The breakout's 5 power and ground positions (pins 12 and 17-20) carry five more switches. Pairs 2 and 3 carry the
-rest in row order. R*n*C*m* is the switch in row *n*, column *m*, as listed in the web config (Add-ons > Keyboard
+The breakout's 5 power and ground positions (pins 12 and 17-20) carry five more switches. Pair 2 carries the next
+20 in row order, and the last 4 are on screw terminals only. R*n*C*m* is the switch in row *n*, column *m*, as listed in the web config (Add-ons > Keyboard
 Matrix).
 
-| Pin | Pair 1 (J2 A / J3 B) | Pair 2 (J4 A / J5 B) | Pair 3 (J6 A / J7 B) |
-|-----|-----|-----|-----|
-| 1 | U (R2C4) | R2C10 | R4C8 |
-| 2 | D (R2C3) | R2C11 | R4C9 |
-| 3 | R (R2C2) | R3C1 | R4C10 |
-| 4 | L (R2C1) | R3C2 | R4C11 |
-| 5 | S1 (R1C11) | R3C3 | - |
-| 6 | A1 (R1C10) | R3C4 | - |
-| 7 | S2 (R1C9) | R3C5 | - |
-| 8 | P1 (R1C8) | R3C6 | - |
-| 9 | P2 (R1C7) | R3C7 | - |
-| 10 | P3 (R1C6) | R3C8 | - |
-| 11 | P4 (R1C5) | R3C9 | - |
-| 12 | R2C5 | R3C10 | - |
-| 13 | K1 (R1C4) | R3C11 | - |
-| 14 | K2 (R1C3) | R4C1 | - |
-| 15 | K3 (R1C2) | R4C2 | - |
-| 16 | K4 (R1C1) | R4C3 | - |
-| 17 | R2C6 | R4C4 | - |
-| 18 | R2C7 | R4C5 | - |
-| 19 | R2C8 | R4C6 | - |
-| 20 | R2C9 | R4C7 | - |
+| Pin | Pair 1 (J2 A / J3 B) | Pair 2 (J4 A / J5 B) |
+|-----|-----|-----|
+| 1 | U (R2C4) | R2C10 |
+| 2 | D (R2C3) | R2C11 |
+| 3 | R (R2C2) | R3C1 |
+| 4 | L (R2C1) | R3C2 |
+| 5 | S1 (R1C11) | R3C3 |
+| 6 | A1 (R1C10) | R3C4 |
+| 7 | S2 (R1C9) | R3C5 |
+| 8 | P1 (R1C8) | R3C6 |
+| 9 | P2 (R1C7) | R3C7 |
+| 10 | P3 (R1C6) | R3C8 |
+| 11 | P4 (R1C5) | R3C9 |
+| 12 | R2C5 | R3C10 |
+| 13 | K1 (R1C4) | R3C11 |
+| 14 | K2 (R1C3) | R4C1 |
+| 15 | K3 (R1C2) | R4C2 |
+| 16 | K4 (R1C1) | R4C3 |
+| 17 | R2C6 | R4C4 |
+| 18 | R2C7 | R4C5 |
+| 19 | R2C8 | R4C6 |
+| 20 | R2C9 | R4C7 |
+
+Screw terminals only: R4C8, R4C9, R4C10, R4C11.
 
 The screw terminals hold the same slots in the same order, A then B:
 
 - pair 1 along the top edge, left to right
 - pair 2 along the bottom edge, left to right
-- pair 3 down the left edge
+- the terminal-only switches down the left edge
 
 Each slot is labelled on the silkscreen.
 

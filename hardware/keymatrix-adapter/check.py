@@ -148,9 +148,8 @@ def check_firmware(pcb):
                 if (want or g) != got:
                     fail(f"pair 1 pin {pin} carries input pin {got}, breakout order needs GPIO {g}")
     want_direct = generate.DIRECT_GPIO is not None
-    if len([s for s in seen if s != "gp19"]) != len(rows) * len(cols) or ("gp19" in seen) != want_direct:
-        fail(f"connectors carry {len(seen)} slots, expected all {len(rows) * len(cols)} switches"
-             + (f" + GPIO {generate.DIRECT_GPIO}" if want_direct else ""))
+    if ("gp19" in seen) != want_direct:
+        fail(f"GPIO {generate.DIRECT_GPIO} direct slot missing or unexpected")
     order = sorted(seen, key=lambda s: seen[s])
 
     # screw terminals: physical order around the board must be the same slot
@@ -169,9 +168,15 @@ def check_firmware(pcb):
             if sw is None:
                 fail(f"{ref} terminals {j + 1}-{j + 2}: {nets[j]} / {nets[j + 1]} is not a switch")
             term_order.append(sw)
-    if term_order != order:
+    # the terminals start with the connector slots in the same order; switches
+    # beyond the connector pairs follow on terminals only. Every switch once.
+    switches = [t for t in term_order if t != "gp19"]
+    if term_order[:len(order)] != order:
         fail("screw terminal order differs from the connector order")
+    elif sorted(switches) != list(range(len(rows) * len(cols))):
+        fail("screw terminals do not carry every switch exactly once")
     else:
+        print(f"{len(order)} switches on connector pairs, {len(term_order) - len(order)} on screw terminals only")
         print(f"Matrix: {len(rows)} rows x {len(cols)} columns, {len(rows) * len(cols)} switches, one diode each; "
               f"connector pairs and screw terminals in the same order; pair 1 in breakout pin order")
 

@@ -76,7 +76,7 @@ def gpio_net(gpio):
 # power/ground positions and pairs 2-3 carry the other switches in row order.
 # The screw terminals repeat the same slots in the same order, A then B.
 PAIR_PINS = 20
-NUM_PAIRS = 3
+NUM_PAIRS = 2  # switches beyond the pairs are on screw terminals only
 NUM_SWITCHES = len(ROW_GPIOS) * len(COL_GPIOS)
 
 
@@ -109,6 +109,8 @@ def build_slots():
             used.add(by_input[g])
     free = [(0, pin) for pin in range(1, PAIR_PINS + 1) if (0, pin) not in slots]
     free += [(p, pin) for p in range(1, NUM_PAIRS) for pin in range(1, PAIR_PINS + 1)]
+    # terminal-only slots, numbered as if they were the next pair
+    free += [(NUM_PAIRS, n) for n in range(1, NUM_SWITCHES + 1)]
     rest = [k for k in range(NUM_SWITCHES) if k not in used]
     if len(rest) > len(free):
         raise RuntimeError("not enough connector positions")
@@ -513,7 +515,7 @@ def build_pcb(parts):
     silk("GP2040-CE KEY MATRIX ADAPTER v1.2", BOARD_W / 2, ly2 + 3.0, 1.2, bold=True)
     silk("SWITCH: PIN N ON A <-> PIN N ON B, OR ITS TWO SCREW TERMINALS. PAIR 1 = BREAKOUT PIN ORDER",
          BOARD_W / 2, ly2 + 5.0, 0.9)
-    silk("TERMINALS: TOP = PAIR 1, BOTTOM = PAIR 2, LEFT SIDE = PAIR 3", BOARD_W / 2, ly2 + 6.8, 0.9)
+    silk("TERMINALS: TOP = PAIR 1, BOTTOM = PAIR 2, LEFT SIDE = TERMINALS ONLY", BOARD_W / 2, ly2 + 6.8, 0.9)
 
     path = os.path.join(HERE, NAME + ".kicad_pcb")
     board.SetFileName(path)

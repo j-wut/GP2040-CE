@@ -43,19 +43,17 @@ Ref,Val,Package,PosX,PosY,Rot,Side
 "D42","1N4148W","D_SOD-123",14.600000,-50.750000,180.000000,top
 "D43","1N4148W","D_SOD-123",14.600000,-57.750000,180.000000,top
 "D44","1N4148W","D_SOD-123",14.600000,-64.750000,180.000000,top
-"J1","To breakout","IDC-Header_2x10_P2.54mm_Vertical",25.729999,-42.570000,0.000000,top
-"J2","Pair 1 A","IDC-Header_2x10_P2.54mm_Vertical",42.730000,-42.570000,0.000000,top
-"J3","Pair 1 B","IDC-Header_2x10_P2.54mm_Vertical",59.730000,-42.570000,0.000000,top
-"J4","Pair 2 A","IDC-Header_2x10_P2.54mm_Vertical",76.729999,-42.570000,0.000000,top
-"J5","Pair 2 B","IDC-Header_2x10_P2.54mm_Vertical",93.729999,-42.570000,0.000000,top
-"J6","Pair 3 A","IDC-Header_2x10_P2.54mm_Vertical",110.729999,-42.570000,0.000000,top
-"J7","Pair 3 B","IDC-Header_2x10_P2.54mm_Vertical",127.729999,-42.570000,0.000000,top
-"J8","Slots 1-5","TerminalBlock_Phoenix_PT-1,5-10-3.5-H_1x10_P3.50mm_Horizontal",38.250000,-5.600000,180.000000,top
-"J9","Slots 6-10","TerminalBlock_Phoenix_PT-1,5-10-3.5-H_1x10_P3.50mm_Horizontal",75.250000,-5.600000,180.000000,top
-"J10","Slots 11-15","TerminalBlock_Phoenix_PT-1,5-10-3.5-H_1x10_P3.50mm_Horizontal",112.250000,-5.600000,180.000000,top
-"J11","Slots 16-20","TerminalBlock_Phoenix_PT-1,5-10-3.5-H_1x10_P3.50mm_Horizontal",149.250000,-5.600000,180.000000,top
-"J12","Slots 21-25","TerminalBlock_Phoenix_PT-1,5-10-3.5-H_1x10_P3.50mm_Horizontal",6.750000,-106.400000,0.000000,top
-"J13","Slots 26-30","TerminalBlock_Phoenix_PT-1,5-10-3.5-H_1x10_P3.50mm_Horizontal",43.750000,-106.400000,0.000000,top
-"J14","Slots 31-35","TerminalBlock_Phoenix_PT-1,5-10-3.5-H_1x10_P3.50mm_Horizontal",80.750000,-106.400000,0.000000,top
-"J15","Slots 36-40","TerminalBlock_Phoenix_PT-1,5-10-3.5-H_1x10_P3.50mm_Horizontal",117.750000,-106.400000,0.000000,top
-"J16","Slots 41-44","TerminalBlock_Phoenix_PT-1,5-8-3.5-H_1x08_P3.50mm_Horizontal",5.600000,-43.750000,-90.000000,top
+"J1","To breakout","IDC-Header_2x10_P2.54mm_Vertical",42.730000,-42.570000,0.000000,top
+"J2","Pair 1 A","IDC-Header_2x10_P2.54mm_Vertical",59.730000,-42.570000,0.000000,top
+"J3","Pair 1 B","IDC-Header_2x10_P2.54mm_Vertical",76.729999,-42.570000,0.000000,top
+"J4","Pair 2 A","IDC-Header_2x10_P2.54mm_Vertical",93.729999,-42.570000,0.000000,top
+"J5","Pair 2 B","IDC-Header_2x10_P2.54mm_Vertical",110.729999,-42.570000,0.000000,top
+"J6","Slots 1-5","TerminalBlock_Phoenix_PT-1,5-10-3.5-H_1x10_P3.50mm_Horizontal",38.250000,-5.600000,180.000000,top
+"J7","Slots 6-10","TerminalBlock_Phoenix_PT-1,5-10-3.5-H_1x10_P3.50mm_Horizontal",75.250000,-5.600000,180.000000,top
+"J8","Slots 11-15","TerminalBlock_Phoenix_PT-1,5-10-3.5-H_1x10_P3.50mm_Horizontal",112.250000,-5.600000,180.000000,top
+"J9","Slots 16-20","TerminalBlock_Phoenix_PT-1,5-10-3.5-H_1x10_P3.50mm_Horizontal",149.250000,-5.600000,180.000000,top
+"J10","Slots 21-25","TerminalBlock_Phoenix_PT-1,5-10-3.5-H_1x10_P3.50mm_Horizontal",6.750000,-106.400000,0.000000,top
+"J11","Slots 26-30","TerminalBlock_Phoenix_PT-1,5-10-3.5-H_1x10_P3.50mm_Horizontal",43.750000,-106.400000,0.000000,top
+"J12","Slots 31-35","TerminalBlock_Phoenix_PT-1,5-10-3.5-H_1x10_P3.50mm_Horizontal",80.750000,-106.400000,0.000000,top
+"J13","Slots 36-40","TerminalBlock_Phoenix_PT-1,5-10-3.5-H_1x10_P3.50mm_Horizontal",117.750000,-106.400000,0.000000,top
+"J14","Slots 41-44","TerminalBlock_Phoenix_PT-1,5-8-3.5-H_1x08_P3.50mm_Horizontal",5.600000,-43.750000,-90.000000,top
