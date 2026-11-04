@@ -104,33 +104,74 @@ def check_firmware(pcb):
         want = generate.header_net(pin)
         if header.get(str(pin)) != want:
             fail(f"J1 pin {pin} is {header.get(str(pin))}, expected {want} ({sig})")
-    seen = set()
-    for net, nodes in pcb.items():
-        m = re.match(r"SW_R(\d)C(\d)", net)
+    # switch k (row by row) -> firmware input pin, computed from the board config
+    matrix_bits = sorted(rows + cols)
+    input_pin = lambda k: matrix_bits[k] if k < len(matrix_bits) else 30 + k - len(matrix_bits)
+    net_of = {node: net for net, nodes in pcb.items() for node in nodes}
+    seen = {}
+
+    def slot_switch(a_net, b_net):
+        """(kind, value) for the switch a pair of nets forms, checking its diode."""
+        if (a_net, b_net) == (f"GP{generate.DIRECT_GPIO}", "GND"):
+            return "gp19"
+        m = re.match(r"SW_R(\d)C(\d)$", a_net or "")
         if not m:
-            continue
+            return None
         r, c = int(m.group(1)) - 1, int(m.group(2)) - 1
-        diode = [ref for ref, pin in nodes if ref.startswith("D") and pin == "2"]
-        term = [ref for ref, pin in nodes if ref == generate.term_ref(c) and pin == str(r + 1)]
-        # the same switch on its connector pair: pin N on A here, pin N on B on the column
-        k = r * len(cols) + c
-        pa, pb = generate.pair_refs(k // generate.PAIR_PINS)
-        ppin = str(k % generate.PAIR_PINS + 1)
-        on_a = (pa, ppin) in nodes
-        on_b = (pb, ppin) in pcb.get(generate.col_net(c), set())
-        if len(diode) != 1 or len(term) != 1 or len(nodes) != 3 or not on_a or not on_b:
-            fail(f"switch {k + 1} ({net}): needs terminal, diode anode, {pa}.{ppin} and {pb}.{ppin} on "
-                 f"{generate.col_net(c)}; has {sorted(nodes)}")
-            continue
-        cathode_net = [n for n, ns in pcb.items() if (diode[0], "1") in ns]
-        if cathode_net != [generate.row_net(r)]:
-            fail(f"{diode[0]} cathode is on {cathode_net}, expected {generate.row_net(r)}")
-        seen.add((r, c))
-    if len(seen) != len(rows) * len(cols):
-        fail(f"only {len(seen)} of {len(rows) * len(cols)} switches are wired")
+        if b_net != f"COL{c + 1}":
+            return None
+        nodes = pcb[a_net]
+        diodes = [ref for ref, pin in nodes if ref.startswith("D") and pin == "2"]
+        if len(diodes) != 1 or net_of.get((diodes[0], "1")) != f"ROW{r + 1}":
+            fail(f"{a_net}: needs exactly one diode, cathode on ROW{r + 1}")
+        return r * len(cols) + c
+
+    # connector pairs: pin N on A and B form one switch
+    for p in range(generate.NUM_PAIRS):
+        ra, rb = generate.pair_refs(p)
+        for pin in range(1, generate.PAIR_PINS + 1):
+            a_net, b_net = net_of.get((ra, str(pin))), net_of.get((rb, str(pin)))
+            if a_net is None and b_net is None:
+                continue
+            sw = slot_switch(a_net, b_net)
+            if sw is None:
+                fail(f"{ra}/{rb} pin {pin}: {a_net} / {b_net} is not a switch")
+                continue
+            if sw in seen:
+                fail(f"switch {sw} appears twice on the connectors")
+            seen[sw] = (p, pin)
+            # pair 1 follows the breakout header order
+            if p == 0 and generate.HEADER[pin].startswith("GP"):
+                g = int(generate.HEADER[pin][2:])
+                want = "gp19" if g == generate.DIRECT_GPIO else None
+                got = sw if sw == "gp19" else input_pin(sw)
+                if (want or g) != got:
+                    fail(f"pair 1 pin {pin} carries input pin {got}, breakout order needs GPIO {g}")
+    if len([s for s in seen if s != "gp19"]) != len(rows) * len(cols) or "gp19" not in seen:
+        fail(f"connectors carry {len(seen)} slots, expected all {len(rows) * len(cols)} switches + GPIO {generate.DIRECT_GPIO}")
+    order = sorted(seen, key=lambda s: seen[s])
+
+    # screw terminals: physical order around the board must be the same slot
+    # order, A then B for each slot
+    board = pcbnew.LoadBoard(PCB)
+    term_order = []
+    for i, (ref, start, count) in enumerate(generate.BLOCKS):
+        fp = board.FindFootprintByReference(ref)
+        edge = generate.block_layout(i)[0]
+        pads = list(fp.Pads())
+        key = (lambda q: q.GetPosition().x) if edge in ("top", "bottom") else (lambda q: q.GetPosition().y)
+        pads.sort(key=key)
+        nets = [q.GetNetname() for q in pads]
+        for j in range(0, len(nets), 2):
+            sw = slot_switch(nets[j], nets[j + 1])
+            if sw is None:
+                fail(f"{ref} terminals {j + 1}-{j + 2}: {nets[j]} / {nets[j + 1]} is not a switch")
+            term_order.append(sw)
+    if term_order != order:
+        fail("screw terminal order differs from the connector order")
     else:
-        print(f"Matrix: {len(rows)} rows x {len(cols)} columns, {len(seen)} switches, one diode each, "
-              f"on terminals and connector pairs in order, matches board config")
+        print(f"Matrix: {len(rows)} rows x {len(cols)} columns, {len(rows) * len(cols)} switches, one diode each; "
+              f"connector pairs and screw terminals in the same order; pair 1 in breakout pin order")
 
 
 def fab():
@@ -153,8 +194,8 @@ def fab():
     parts = {
         "Device:D": ("1N4148W", "Small-signal switching diode, SOD-123"),
         "Connector_Generic:Conn_02x10_Odd_Even": ("2x10 box header", "2.54 mm shrouded IDC box header, vertical, through-hole"),
-        "Connector:Screw_Terminal_01x07": ("7-way terminal", "3.5 mm pitch screw terminal, Phoenix PT 1,5/7-3,5-H or equivalent"),
-        "Connector:Screw_Terminal_01x02": ("2-way terminal", "3.5 mm pitch screw terminal, Phoenix PT 1,5/2-3,5-H or equivalent"),
+        "Connector:Screw_Terminal_01x10": ("10-way terminal", "3.5 mm pitch screw terminal, Phoenix PT 1,5/10-3,5-H or equivalent"),
+        "Connector:Screw_Terminal_01x08": ("8-way terminal", "3.5 mm pitch screw terminal, Phoenix PT 1,5/8-3,5-H or equivalent"),
     }
     groups = {}
     for p in generate.build_parts():
