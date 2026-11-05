@@ -542,8 +542,8 @@ void AnimationStation::SetTestModeLayout(){
     options.profiles[testProfileIndex].baseCaseEffect = AnimationNonPressedEffects::AnimationNonPressedEffects_EFFECT_CHASE_LEFT_TO_RIGHT;
     options.profiles[testProfileIndex].baseNonPressedEffect = AnimationNonPressedEffects::AnimationNonPressedEffects_EFFECT_CHASE_LEFT_TO_RIGHT;
     options.profiles[testProfileIndex].basePressedEffect = AnimationPressedEffects::AnimationPressedEffects_PRESSEDEFFECT_STATIC_COLOR;
-    memset(options.profiles[testProfileIndex].notPressedStaticColors.bytes, 0, NUM_BANK0_GPIOS);
-    memset(options.profiles[testProfileIndex].pressedStaticColors.bytes, 0, NUM_BANK0_GPIOS);
+    memset(options.profiles[testProfileIndex].notPressedStaticColors.bytes, 0, sizeof(options.profiles[testProfileIndex].notPressedStaticColors.bytes));
+    memset(options.profiles[testProfileIndex].pressedStaticColors.bytes, 0, sizeof(options.profiles[testProfileIndex].pressedStaticColors.bytes));
     memset(options.profiles[testProfileIndex].nonButtonStaticColors.bytes, 0, MAX_NON_BUTTON_LIGHT_COLOR_INDEXES);
     memset(options.profiles[testProfileIndex].extNotPressedStaticColors.bytes, 0, sizeof(options.profiles[testProfileIndex].extNotPressedStaticColors.bytes));
     memset(options.profiles[testProfileIndex].extPressedStaticColors.bytes, 0, sizeof(options.profiles[testProfileIndex].extPressedStaticColors.bytes));
@@ -561,8 +561,8 @@ void AnimationStation::SetTestModeButton(){
     options.profiles[testProfileIndex].baseCaseEffect = AnimationNonPressedEffects::AnimationNonPressedEffects_EFFECT_STATIC_COLOR;
     options.profiles[testProfileIndex].baseNonPressedEffect = AnimationNonPressedEffects::AnimationNonPressedEffects_EFFECT_STATIC_COLOR;
     options.profiles[testProfileIndex].basePressedEffect = AnimationPressedEffects::AnimationPressedEffects_PRESSEDEFFECT_STATIC_COLOR;
-    memset(options.profiles[testProfileIndex].notPressedStaticColors.bytes, 0, NUM_BANK0_GPIOS);
-    memset(options.profiles[testProfileIndex].pressedStaticColors.bytes, 0, NUM_BANK0_GPIOS);
+    memset(options.profiles[testProfileIndex].notPressedStaticColors.bytes, 0, sizeof(options.profiles[testProfileIndex].notPressedStaticColors.bytes));
+    memset(options.profiles[testProfileIndex].pressedStaticColors.bytes, 0, sizeof(options.profiles[testProfileIndex].pressedStaticColors.bytes));
     memset(options.profiles[testProfileIndex].nonButtonStaticColors.bytes, 0, MAX_NON_BUTTON_LIGHT_COLOR_INDEXES);
     memset(options.profiles[testProfileIndex].extNotPressedStaticColors.bytes, 0, sizeof(options.profiles[testProfileIndex].extNotPressedStaticColors.bytes));
     memset(options.profiles[testProfileIndex].extPressedStaticColors.bytes, 0, sizeof(options.profiles[testProfileIndex].extPressedStaticColors.bytes));

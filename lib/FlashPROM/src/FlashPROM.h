@@ -13,8 +13,14 @@
 #include <hardware/flash.h>
 #include <hardware/timer.h>
 
-#define EEPROM_SIZE_BYTES    0x8000           // Reserve 32k of flash memory (ensure this value is divisible by 256)
-#define EEPROM_ADDRESS_START _u(0x101F8000) // The arduino-pico EEPROM lib starts here, so we'll do the same
+// The saved config sits at the very end of the region, right before the end of
+// the 2 MB flash, so growing the region downward keeps existing configs readable
+// (and older firmware, which reads the last 32k, still finds them).
+#define EEPROM_SIZE_BYTES    0xA000           // Reserve 40k of flash memory (ensure this value is divisible by 4096)
+#define EEPROM_ADDRESS_END   _u(0x10200000)
+#define EEPROM_ADDRESS_START (EEPROM_ADDRESS_END - EEPROM_SIZE_BYTES)
+// Where the arduino-pico EEPROM lib, and the pre-protobuf config, started
+#define LEGACY_EEPROM_ADDRESS_START _u(0x101F8000)
 
 // Warning: If the write wait is too long it can stall other processes
 #define EEPROM_WRITE_WAIT    50             // Amount of time in ms to wait before blocking core1 and committing to flash

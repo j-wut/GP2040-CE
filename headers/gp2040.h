@@ -14,6 +14,7 @@
 
 // GP2040 Classes
 #include "gamepad.h"
+#include "keymatrix.h"
 #include "addonmanager.h"
 #include "eventmanager.h"
 #include "gpdriver.h"
@@ -35,7 +36,7 @@ private:
     // GPIO debouncer
     void debounceGpioGetAll();
     Mask_t buttonGpios;
-    uint32_t gpioDebounceTime[NUM_BANK0_GPIOS] = {};
+    uint32_t gpioDebounceTime[NUM_INPUT_PINS] = {};
 
     struct RebootHotkeys {
         RebootHotkeys();

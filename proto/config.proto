@@ -8,6 +8,8 @@ message InputModeMapping {
     optional int32 pinMask = 1;
     optional InputMode inputMode = 2;
     optional uint32 profileNumber = 3;
+    // pins 32-63 (keyboard matrix switches)
+    optional uint32 pinMaskHigh = 4;
 }
 
 message BootModeOptions {
@@ -15,6 +17,9 @@ message BootModeOptions {
     optional uint32 webConfigPinMask = 2;
     optional uint32 usbModePinMask = 3;
     repeated InputModeMapping inputModeMappings = 4 [(nanopb).max_count = 8];
+    // pins 32-63 (keyboard matrix switches)
+    optional uint32 webConfigPinMaskHigh = 5;
+    optional uint32 usbModePinMaskHigh = 6;
 }
 
 message GamepadOptions
@@ -226,6 +231,10 @@ message GpioMappings
     optional KeyboardMapping keyboardMapping = 4;
     optional bool pinInversionEnabled = 5;
     repeated uint32 invertedPins = 6 [(nanopb).max_count = 48];
+    // keyboard matrix switch mappings of this profile, row by row, packed to fit
+    // the saved config (see keymatrix.h). A profile with none uses the base profile's.
+    repeated uint32 matrixSwitchActions = 7 [(nanopb).max_count = 64, packed = true];
+    repeated uint32 matrixSwitchButtonMasks = 8 [(nanopb).max_count = 64, packed = true];
 }
 
 
@@ -363,8 +372,8 @@ message AnimationProfile
  	optional AnimationNonPressedEffects baseNonPressedEffect = 2;
   	optional AnimationPressedEffects basePressedEffect = 3;
     optional int32 baseCycleTime = 4;
-    optional bytes notPressedStaticColors = 5 [(nanopb).max_size = 48]; //NUM_BANK0_GPIOS from platform_defs.h
-    optional bytes pressedStaticColors = 6 [(nanopb).max_size = 48]; //NUM_BANK0_GPIOS from platform_defs.h
+    optional bytes notPressedStaticColors = 5 [(nanopb).max_size = 64]; //NUM_INPUT_PINS from keymatrix.h
+    optional bytes pressedStaticColors = 6 [(nanopb).max_size = 64]; //NUM_INPUT_PINS from keymatrix.h
     optional uint32 buttonPressHoldTimeInMs = 7;
     optional uint32 buttonPressFadeOutTimeInMs = 8;
     optional uint32 nonPressedSpecialColor = 9;
@@ -959,6 +968,18 @@ message HETriggerOptions
     repeated HETriggerMux muxes = 15 [(nanopb).max_count = 4];
 }
 
+message KeyMatrixOptions
+{
+    optional bool enabled = 1;
+    repeated int32 rowPins = 2 [(nanopb).max_count = 16];
+    repeated int32 colPins = 3 [(nanopb).max_count = 16];
+    optional uint32 settleMicros = 4;
+    // switch mappings live in each profile's GpioMappings
+    reserved 5, 6;
+    // pause after each row is released, before the next row is scanned
+    optional uint32 rowDelayMicros = 7;
+}
+
 message AddonOptions
 {
     optional BootselButtonOptions bootselButtonOptions = 1;
@@ -993,6 +1014,7 @@ message AddonOptions
     optional HETriggerOptions heTriggerOptions = 30;
     optional ProfileSliderOptions profileSliderOptions = 31;
     optional AnalogADS1115Options analogADS1115Options = 32;
+    optional KeyMatrixOptions keyMatrixOptions = 33;
 }
 
 message MigrationHistory

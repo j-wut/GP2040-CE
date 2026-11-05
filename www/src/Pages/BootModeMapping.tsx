@@ -20,6 +20,10 @@ import useProfilesStore, {
 } from '../Store/useProfilesStore';
 import { BUTTON_ACTIONS } from '../Data/Pins';
 import ContextualHelpOverlay from '../Components/ContextualHelpOverlay';
+import {
+	matrixSwitchName,
+	useKeyMatrixSwitches,
+} from '../Data/KeyMatrixSwitches';
 
 type PinOption = {
 	label: string;
@@ -118,17 +122,21 @@ function PinSelect({ mappingKey }: { mappingKey: string }) {
 	};
 
 	const { boardDefinition } = useBoardDefinition();
+	const matrixSwitches = useKeyMatrixSwitches();
+	const getMatrixSwitch = (pin: number) =>
+		matrixSwitches.find((matrixSwitch) => matrixSwitch.pin === pin);
 
-	const PIN_OPTIONS: PinOption[] = Array.from(
-		{ length: boardDefinition.availablePins.length },
-		(_, i) => ({
+	// real GPIOs, then the keyboard matrix switches above them
+	const gpioCount = boardDefinition.availablePins.length;
+	const PIN_OPTIONS: PinOption[] = [
+		...Array.from({ length: gpioCount }, (_, i) => ({
 			label: `GP${i}`,
 			value: i,
-		}),
-	);
-
-	console.dir(boardDefinition);
-	console.dir(PIN_OPTIONS);
+		})),
+		...matrixSwitches
+			.filter(({ pin }) => pin >= gpioCount)
+			.map(({ pin }) => ({ label: `Pin ${pin}`, value: pin })),
+	];
 
 	const values = PIN_OPTIONS.filter(({ value }) => pins.has(value));
 
@@ -150,20 +158,31 @@ function PinSelect({ mappingKey }: { mappingKey: string }) {
 		modesWithDuplicates.includes(mappingKey) ||
 		(saveAttempted && values.length == 0);
 
+	// a matrix switch is a plain input, even where its pin is a matrix row/column GPIO
+	const getPinAction = (pin: number) =>
+		getMatrixSwitch(pin) ? undefined : profilePins[pinField(pin)]?.action;
+
 	const isOptionDisabled = (option: PinOption) => {
-		return [BUTTON_ACTIONS.RESERVED, BUTTON_ACTIONS.ASSIGNED_TO_ADDON].includes(
-			profilePins[pinField(option.value)].action,
+		const action = getPinAction(option.value);
+		return (
+			action !== undefined &&
+			[BUTTON_ACTIONS.RESERVED, BUTTON_ACTIONS.ASSIGNED_TO_ADDON].includes(
+				action,
+			)
 		);
 	};
 
 	const getOptionLabel = (option: PinOption) => {
-		if (profilePins[pinField(option.value)].action == BUTTON_ACTIONS.RESERVED) {
+		const matrixSwitch = getMatrixSwitch(option.value);
+		if (matrixSwitch) {
+			return `${option.label} (${t('BootModeMapping:matrix-switch', {
+				name: matrixSwitchName(matrixSwitch),
+			})})`;
+		}
+		if (getPinAction(option.value) == BUTTON_ACTIONS.RESERVED) {
 			return `${option.label} (Reserved)`;
 		}
-		if (
-			profilePins[pinField(option.value)].action ==
-			BUTTON_ACTIONS.ASSIGNED_TO_ADDON
-		) {
+		if (getPinAction(option.value) == BUTTON_ACTIONS.ASSIGNED_TO_ADDON) {
 			return `${option.label} (Assigned to Add-on)`;
 		}
 		return option.label;

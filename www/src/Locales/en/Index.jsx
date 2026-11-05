@@ -13,6 +13,7 @@ import CaptureButton from './CaptureButton';
 import WiiAddon from './Addons/WiiAddon';
 import Rotary from './Addons/Rotary';
 import PCF8575 from './Addons/PCF8575';
+import KeyMatrix from './Addons/KeyMatrix';
 import ReactiveLED from './Addons/ReactiveLED';
 import HETrigger from './Addons/HETrigger';
 import InputMacroAddon from './InputMacroAddon';
@@ -40,6 +41,7 @@ export default {
 	InputMacroAddon,
 	LayoutConfig,
 	PCF8575,
+	KeyMatrix,
 	ReactiveLED,
 	Proto,
 	HETrigger,

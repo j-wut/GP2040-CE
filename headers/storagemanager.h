@@ -15,6 +15,7 @@
 #include "gamepad.h"
 
 #include "config.pb.h"
+#include "keymatrix.h"
 #include <atomic>
 #include "pico/critical_section.h"
 #include "eventmanager.h"
@@ -64,6 +65,12 @@ public:
 	void previousProfile();
 	void setFunctionalPinMappings();
 	void setBootModeFunctionalPinMappings();
+	// the mappings that hold a profile's keyboard matrix switches (the profile's own, or the base profile's)
+	const GpioMappings& getKeyMatrixMappings(const GpioMappings* profile) const;
+	// a boot mode pin mask: pins 0-31 and pins 32-63 (keyboard matrix switches)
+	static Mask_t getBootModeMask(int32_t low, uint32_t high) {
+		return Mask_t{(uint32_t)low} | (Mask_t{high} << 32);
+	}
 	char* currentProfileLabel();
 
 	void ResetSettings(); 				// EEPROM Reset Feature
@@ -77,10 +84,11 @@ private:
 	Gamepad * processedGamepad = nullptr; // Gamepad with ONLY processed data
 	uint8_t featureData[32]; // USB X-Input Feature Data
 	Config config;
-	GpioMappingInfo functionalPinMappings[NUM_BANK0_GPIOS];
+	GpioMappingInfo functionalPinMappings[NUM_INPUT_PINS];
 	KeyboardMapping* activeKeyboardMapping = &config.keyboardMapping;
 	Mask_t invertedPins = 0;
 	void setInvertedPins(const GpioMappings& mappings);
+	void setVirtualPinMappings(const GpioMappings* profile);
 	uint32_t systemFlashSize;
 };
 

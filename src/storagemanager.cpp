@@ -123,7 +123,11 @@ void Storage::setInvertedPins(const GpioMappings& mappings)
 
 Mask_t Storage::getPressedGpios() const
 {
-	return ~gpio_get_all64() ^ invertedPins;
+	// real GPIOs are active low; matrix row/column GPIOs are wires, so their bits
+	// (and the bits above the real GPIOs) carry the matrix switches instead
+	const KeyMatrix& matrix = KeyMatrix::getInstance();
+	const Mask_t directPins = ((Mask_t{1} << NUM_BANK0_GPIOS) - 1) & ~matrix.getMatrixGpioMask();
+	return ((~gpio_get_all64() ^ invertedPins) & directPins) | matrix.getState();
 }
 
 void Storage::setFunctionalPinMappings()
@@ -156,7 +160,36 @@ void Storage::setFunctionalPinMappings()
 			functionalPinMappings[pin] = this->config.gpioMappings.pins[pin];
 		}
 	}
+	setVirtualPinMappings(profile);
 	setInvertedPins(profile ? *profile : config.gpioMappings);
+}
+
+/**
+ * @brief keyboard matrix switches are input pins too. Each profile can map them;
+ * a profile without its own switch mappings uses the base profile's.
+ */
+const GpioMappings& Storage::getKeyMatrixMappings(const GpioMappings* profile) const
+{
+	if (profile != nullptr && profile->matrixSwitchActions_count > 0 &&
+			profile->matrixSwitchActions_count == profile->matrixSwitchButtonMasks_count)
+		return *profile;
+	return config.gpioMappings;
+}
+
+void Storage::setVirtualPinMappings(const GpioMappings* profile)
+{
+	const GpioMappings& mappings = getKeyMatrixMappings(profile);
+	const KeyMatrix& matrix = KeyMatrix::getInstance();
+
+	for (Pin_t pin = (Pin_t)NUM_BANK0_GPIOS; pin < (Pin_t)NUM_INPUT_PINS; pin++) {
+		functionalPinMappings[pin] = GpioMappingInfo GpioMappingInfo_init_zero;
+		functionalPinMappings[pin].action = GpioAction::NONE;
+	}
+	for (uint32_t i = 0; i < matrix.getSwitchCount(); i++) {
+		functionalPinMappings[matrix.getSwitchPin(i)] = unpackSwitchMapping(
+			i < mappings.matrixSwitchActions_count ? mappings.matrixSwitchActions[i] : 0,
+			i < mappings.matrixSwitchButtonMasks_count ? mappings.matrixSwitchButtonMasks[i] : 0);
+	}
 }
 
 /**
@@ -172,23 +205,36 @@ void Storage::setBootModeFunctionalPinMappings()
 	// Relying on the assumption that all profiles share same set of RESERVED/ASSIGNED_TO_ADDON pins
 	GpioMappingInfo* pins = getGpioMappings().pins;
 
-	int32_t mask = bootModeOptions.webConfigPinMask | bootModeOptions.usbModePinMask;
+	Mask_t mask = getBootModeMask(bootModeOptions.webConfigPinMask, bootModeOptions.webConfigPinMaskHigh) |
+		getBootModeMask(bootModeOptions.usbModePinMask, bootModeOptions.usbModePinMaskHigh);
 	for (size_t i = 0; i < bootModeOptions.inputModeMappings_count; i++) {
-		auto mapping = bootModeOptions.inputModeMappings[i];
+		const InputModeMapping& mapping = bootModeOptions.inputModeMappings[i];
 		if (mapping.pinMask == -1) {
 			continue;
 		}
-		mask |= mapping.pinMask;
+		mask |= getBootModeMask(mapping.pinMask, mapping.pinMaskHigh);
 	}
 
+	// keyboard matrix switches can be part of a boot combo too
+	const KeyMatrix& matrix = KeyMatrix::getInstance();
+	Mask_t switchPins = 0;
+	for (uint32_t i = 0; i < matrix.getSwitchCount(); i++) {
+		switchPins |= Mask_t{1} << matrix.getSwitchPin(i);
+	}
 	for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++) {
-		if (pins[pin].action != GpioAction::RESERVED &&
-			pins[pin].action != GpioAction::ASSIGNED_TO_ADDON &&
-			(mask & (1 << pin)))
+		const bool isSwitch = (switchPins >> pin) & 1;
+		if ((isSwitch ||
+			 (pins[pin].action != GpioAction::RESERVED &&
+			  pins[pin].action != GpioAction::ASSIGNED_TO_ADDON)) &&
+			((mask >> pin) & 1))
 		{
 			// Just setting an arbitrary non-zero action
 			functionalPinMappings[pin].action = GpioAction::BUTTON_PRESS_A1;
 		}
+	}
+	for (Pin_t pin = (Pin_t)NUM_BANK0_GPIOS; pin < (Pin_t)NUM_INPUT_PINS; pin++) {
+		functionalPinMappings[pin].action = ((mask & switchPins) >> pin) & 1
+			? GpioAction::BUTTON_PRESS_A1 : GpioAction::NONE;
 	}
 	setInvertedPins(getGpioMappings());
 }

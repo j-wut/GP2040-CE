@@ -112,7 +112,7 @@ void Gamepad::setup()
 		if (mapDigitalRight->buttonMask & mapInfo.customDpadMask)	mapDigitalRight->pinMask |= Mask_t{1} << pin;
 	};
 
-	for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+	for (Pin_t pin = 0; pin < (Pin_t)NUM_INPUT_PINS; pin++)
 	{
 		switch (pinMappings[pin].action) {
 			case GpioAction::BUTTON_PRESS_UP:	mapDpadUp->pinMask |= Mask_t{1} << pin; break;

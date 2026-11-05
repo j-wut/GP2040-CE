@@ -17,11 +17,8 @@ import {
 } from '../../Store/useLedStore';
 import { rgbIntToHex } from '../../Services/Utilities';
 import ColorSelector from './ColorSelector';
-import boards from '../../Data/Boards.json';
+import { NUM_INPUT_PINS } from '../../Data/KeyMatrixSwitches';
 import { LedFormValues } from './ledFormUtils';
-
-const GPIO_PIN_LENGTH =
-	boards[import.meta.env.VITE_GP2040_BOARD as keyof typeof boards].maxPin + 1;
 
 const getViewBox = (lights: { xCoord: number; yCoord: number }[]) =>
 	lights.reduce(
@@ -489,7 +486,7 @@ function ButtonLayoutPreview({
 							onChange={(selected) => {
 								setFieldValue(
 									`AnimationOptions.profiles.${profileIndex}.notPressedStaticColors`,
-									Array(GPIO_PIN_LENGTH).fill(selected?.value || 0),
+									Array(NUM_INPUT_PINS).fill(selected?.value || 0),
 								);
 								setFieldValue(
 									`AnimationOptions.profiles.${profileIndex}.extNotPressedStaticColors`,
@@ -512,7 +509,7 @@ function ButtonLayoutPreview({
 							onChange={(selected) => {
 								setFieldValue(
 									`AnimationOptions.profiles.${profileIndex}.pressedStaticColors`,
-									Array(GPIO_PIN_LENGTH).fill(selected?.value || 0),
+									Array(NUM_INPUT_PINS).fill(selected?.value || 0),
 								);
 								setFieldValue(
 									`AnimationOptions.profiles.${profileIndex}.extPressedStaticColors`,

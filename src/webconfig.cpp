@@ -37,6 +37,7 @@
 #include "lwip/def.h"
 #include "lwip/mem.h"
 #include "addons/input_macro.h"
+#include "keymatrix.h"
 
 #define PATH_CGI_ACTION "/cgi/action"
 
@@ -282,9 +283,9 @@ int set_file_data(fs_file *file, string&& data)
     return set_file_data(file, DataAndStatusCode(std::move(data), HttpStatusCode::_200));
 }
 
-DynamicJsonDocument get_post_data()
+DynamicJsonDocument get_post_data(size_t capacity = LWIP_HTTPD_POST_MAX_PAYLOAD_LEN)
 {
-    DynamicJsonDocument doc(LWIP_HTTPD_POST_MAX_PAYLOAD_LEN);
+    DynamicJsonDocument doc(capacity);
     deserializeJson(doc, http_post_payload, http_post_payload_len);
     return doc;
 }
@@ -1360,16 +1361,19 @@ void helperGetProfileFromJsonObject(AnimationProfile* Profile, JsonObject* JsonD
     JsonArray pressedStaticColorsList = (*JsonData)["pressedStaticColors"];
     JsonArray nonButtonStaticColorsList = (*JsonData)["nonButtonStaticColors"];
 
-    memset(Profile->notPressedStaticColors.bytes, 0, NUM_BANK0_GPIOS);
-    memset(Profile->pressedStaticColors.bytes, 0, NUM_BANK0_GPIOS);
     memset(Profile->nonButtonStaticColors.bytes, 0, MAX_NON_BUTTON_LIGHT_COLOR_INDEXES);
 
-    for(uint32_t i = 0; i < NUM_BANK0_GPIOS; i++){
-        Profile->notPressedStaticColors.bytes[i] = notPressedStaticColorsList[i].as<uint32_t>() & 0xFF;
-        Profile->pressedStaticColors.bytes[i] = pressedStaticColorsList[i].as<uint32_t>() & 0xFF;
+    // one color per input pin, keyboard matrix switches included. Pins a shorter
+    // list leaves out (older UIs and exports) keep their color.
+    static_assert(sizeof(Profile->pressedStaticColors.bytes) >= NUM_INPUT_PINS, "static colors need one byte per input pin");
+    for(uint32_t i = 0; i < NUM_INPUT_PINS; i++){
+        if (i < notPressedStaticColorsList.size())
+            Profile->notPressedStaticColors.bytes[i] = notPressedStaticColorsList[i].as<uint32_t>() & 0xFF;
+        if (i < pressedStaticColorsList.size())
+            Profile->pressedStaticColors.bytes[i] = pressedStaticColorsList[i].as<uint32_t>() & 0xFF;
     }
-    Profile->notPressedStaticColors.size = NUM_BANK0_GPIOS;
-    Profile->pressedStaticColors.size = NUM_BANK0_GPIOS;
+    Profile->notPressedStaticColors.size = NUM_INPUT_PINS;
+    Profile->pressedStaticColors.size = NUM_INPUT_PINS;
     for(uint32_t i = 0; i < MAX_NON_BUTTON_LIGHT_COLOR_INDEXES; i++){
         Profile->nonButtonStaticColors.bytes[i] = nonButtonStaticColorsList[i].as<uint32_t>() & 0xFF;
     }
@@ -1451,9 +1455,13 @@ std::string clearAnimationButtonTestMode()
     return serialize_json(doc);
 }
 
+// LED profiles carry a color per input pin (keyboard matrix switches included),
+// which needs a bigger JSON document than the default
+#define ANIMATION_OPTIONS_JSON_CAPACITY (1024 * 24)
+
 std::string setAnimationProtoOptions()
 {
-    DynamicJsonDocument doc = get_post_data();
+    DynamicJsonDocument doc = get_post_data(ANIMATION_OPTIONS_JSON_CAPACITY);
 
     AnimationOptions& options = Storage::getInstance().getAnimationOptions();
     AnimationStation& AnimStation = AnimationStation::getInstance();
@@ -1491,7 +1499,7 @@ std::string setAnimationProtoOptions()
 
 std::string getAnimationProtoOptions()
 {
-    DynamicJsonDocument doc(LWIP_HTTPD_POST_MAX_PAYLOAD_LEN);
+    DynamicJsonDocument doc(ANIMATION_OPTIONS_JSON_CAPACITY);
     const AnimationOptions& options = Storage::getInstance().getAnimationOptions();
     AnimationStation& AnimStation = AnimationStation::getInstance();
 
@@ -1537,7 +1545,7 @@ std::string getAnimationProtoOptions()
         JsonArray notPressedStaticColorsList = profile.createNestedArray("notPressedStaticColors");
         JsonArray pressedStaticColorsList = profile.createNestedArray("pressedStaticColors");
         JsonArray nonButtonStaticColorsList = profile.createNestedArray("nonButtonStaticColors");
-        for (unsigned int index = 0; index < NUM_BANK0_GPIOS; index++ ) {
+        for (unsigned int index = 0; index < NUM_INPUT_PINS; index++ ) {
             notPressedStaticColorsList.add(options.profiles[profilesIndex].notPressedStaticColors.bytes[index]);
             pressedStaticColorsList.add(options.profiles[profilesIndex].pressedStaticColors.bytes[index]);
         }
@@ -1669,6 +1677,9 @@ std::string getBootModeOptions() {
 	writeDoc(doc, "enabled", bootModeOptions.enabled);
 	writeDoc(doc, "webConfigPinMask", bootModeOptions.webConfigPinMask);
 	writeDoc(doc, "usbModePinMask", bootModeOptions.usbModePinMask);
+	// pins 32-63 (keyboard matrix switches)
+	writeDoc(doc, "webConfigPinMaskHigh", bootModeOptions.webConfigPinMaskHigh);
+	writeDoc(doc, "usbModePinMaskHigh", bootModeOptions.usbModePinMaskHigh);
 
 	if (bootModeOptions.inputModeMappings_count == 0) {
         doc.createNestedArray("inputModeMappings");
@@ -1677,6 +1688,7 @@ std::string getBootModeOptions() {
 		writeDoc(doc, "inputModeMappings", i, "pinMask", mappings[i].pinMask);
 		writeDoc(doc, "inputModeMappings", i, "inputMode", mappings[i].inputMode);
 		writeDoc(doc, "inputModeMappings", i, "profileNumber", mappings[i].profileNumber);
+		writeDoc(doc, "inputModeMappings", i, "pinMaskHigh", mappings[i].pinMaskHigh);
 	}
 
 	return serialize_json(doc);
@@ -1691,6 +1703,10 @@ std::string setBootModeOptions() {
 	bootModeOptions.enabled = options["enabled"].as<bool>();
 	bootModeOptions.webConfigPinMask = options["webConfigPinMask"].as<int32_t>();
 	bootModeOptions.usbModePinMask = options["usbModePinMask"].as<int32_t>();
+	bootModeOptions.webConfigPinMaskHigh = options["webConfigPinMaskHigh"].as<uint32_t>();
+	bootModeOptions.usbModePinMaskHigh = options["usbModePinMaskHigh"].as<uint32_t>();
+	bootModeOptions.has_webConfigPinMaskHigh = true;
+	bootModeOptions.has_usbModePinMaskHigh = true;
 
     JsonArray mappings = options["inputModeMappings"];
 
@@ -1699,6 +1715,8 @@ std::string setBootModeOptions() {
 		bootModeOptions.inputModeMappings[i].pinMask = mapping["pinMask"].as<int32_t>();
 		bootModeOptions.inputModeMappings[i].inputMode = mapping["inputMode"].as<InputMode>();
 		bootModeOptions.inputModeMappings[i].profileNumber = mapping["profileNumber"].as<uint32_t>();
+		bootModeOptions.inputModeMappings[i].pinMaskHigh = mapping["pinMaskHigh"].as<uint32_t>();
+		bootModeOptions.inputModeMappings[i].has_pinMaskHigh = true;
 		if (++i >= MAX_MAPPED_INPUT_MODES) {
 			break;
 		}
@@ -1981,6 +1999,141 @@ std::string setExpansionPins()
 
     EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
 
+    return serialize_json(doc);
+}
+
+std::string getKeyMatrixOptions()
+{
+    const KeyMatrixOptions& matrix = Storage::getInstance().getAddonOptions().keyMatrixOptions;
+    const KeyMatrix& keyMatrix = KeyMatrix::getInstance();
+    const ProfileOptions& profileOptions = Storage::getInstance().getProfileOptions();
+    const GpioMappings& base = Storage::getInstance().getGpioMappings();
+    const size_t profileCount = 1 + std::size(profileOptions.gpioMappingsSets);
+    // switch mappings are sent packed (see keymatrix.h) to keep the document small
+    DynamicJsonDocument doc(JSON_OBJECT_SIZE(9) + JSON_ARRAY_SIZE(KEY_MATRIX_MAX_ROWS) * 2
+        + JSON_ARRAY_SIZE(KEY_MATRIX_MAX_SWITCHES) + JSON_ARRAY_SIZE(profileCount)
+        + profileCount * (JSON_OBJECT_SIZE(3) + JSON_ARRAY_SIZE(KEY_MATRIX_MAX_SWITCHES) * 2));
+
+    doc["enabled"] = matrix.enabled;
+    doc["settleMicros"] = matrix.settleMicros;
+    doc["rowDelayMicros"] = matrix.rowDelayMicros;
+    doc["firstVirtualPin"] = NUM_BANK0_GPIOS;
+    JsonArray rows = doc.createNestedArray("rowPins");
+    for (pb_size_t i = 0; i < matrix.rowPins_count; i++) rows.add(matrix.rowPins[i]);
+    JsonArray cols = doc.createNestedArray("colPins");
+    for (pb_size_t i = 0; i < matrix.colPins_count; i++) cols.add(matrix.colPins[i]);
+    // profile 1 is the base mappings; a profile without its own uses profile 1's
+    JsonArray profiles = doc.createNestedArray("profiles");
+    for (size_t p = 0; p < profileCount; p++) {
+        const GpioMappings& mappings = p == 0 ? base : profileOptions.gpioMappingsSets[p - 1];
+        const bool custom = p == 0 || &Storage::getInstance().getKeyMatrixMappings(&mappings) == &mappings;
+        JsonObject profile = profiles.createNestedObject();
+        profile["custom"] = custom;
+        JsonArray actions = profile.createNestedArray("actions");
+        JsonArray buttonMasks = profile.createNestedArray("buttonMasks");
+        if (!custom) continue;
+        for (pb_size_t i = 0; i < mappings.matrixSwitchActions_count && i < mappings.matrixSwitchButtonMasks_count; i++) {
+            actions.add(mappings.matrixSwitchActions[i]);
+            buttonMasks.add(mappings.matrixSwitchButtonMasks[i]);
+        }
+    }
+    // input pin number of each switch in the running firmware (changes need a reboot)
+    JsonArray switchPins = doc.createNestedArray("switchPins");
+    for (uint32_t i = 0; i < keyMatrix.getSwitchCount(); i++) switchPins.add(keyMatrix.getSwitchPin(i));
+    return serialize_json(doc);
+}
+
+std::string setKeyMatrixOptions()
+{
+    DynamicJsonDocument doc = get_post_data();
+    KeyMatrixOptions& matrix = Storage::getInstance().getAddonOptions().keyMatrixOptions;
+    GpioMappingInfo* gpioMappings = Storage::getInstance().getGpioMappings().pins;
+
+    const auto isMatrixPin = [&](int32_t pin) -> bool {
+        for (pb_size_t i = 0; i < matrix.rowPins_count; i++) if (matrix.rowPins[i] == pin) return true;
+        for (pb_size_t i = 0; i < matrix.colPins_count; i++) if (matrix.colPins[i] == pin) return true;
+        return false;
+    };
+
+    // read and check the new row/column pins before changing anything
+    std::vector<int32_t> rowPins, colPins;
+    std::set<int32_t> newPins;
+    const auto readPins = [&](const char* key, std::vector<int32_t>& out, size_t maxCount) -> const char* {
+        for (JsonVariantConst value : doc[key].as<JsonArrayConst>()) {
+            int32_t pin = value.as<int32_t>();
+            if (!isValidPin(pin)) return "invalid pin";
+            if (!newPins.insert(pin).second) return "pin used twice";
+            // only button pins (or pins the matrix already owns) can become matrix pins
+            if (!isMatrixPin(pin) &&
+                (gpioMappings[pin].action == GpioAction::RESERVED ||
+                 gpioMappings[pin].action == GpioAction::ASSIGNED_TO_ADDON))
+                return "pin is used by another feature";
+            out.push_back(pin);
+        }
+        return out.size() > maxCount ? "too many pins" : nullptr;
+    };
+    const char* error = readPins("rowPins", rowPins, KEY_MATRIX_MAX_ROWS);
+    if (!error) error = readPins("colPins", colPins, KEY_MATRIX_MAX_COLS);
+    if (error) {
+        DynamicJsonDocument errorDoc(JSON_OBJECT_SIZE(1));
+        errorDoc["error"] = error;
+        return serialize_json(errorDoc);
+    }
+
+    docToValue(matrix.enabled, doc, "enabled");
+    docToValue(matrix.settleMicros, doc, "settleMicros");
+    docToValue(matrix.rowDelayMicros, doc, "rowDelayMicros");
+    matrix.settleMicros = std::min<uint32_t>(std::max<uint32_t>(matrix.settleMicros, 1), KEY_MATRIX_MAX_DELAY_MICROS);
+    matrix.rowDelayMicros = std::min<uint32_t>(matrix.rowDelayMicros, KEY_MATRIX_MAX_DELAY_MICROS);
+
+    // release pins the matrix no longer uses, then claim the new ones
+    const std::set<int32_t> claimedPins = matrix.enabled ? newPins : std::set<int32_t>();
+    for (pb_size_t i = 0; i < matrix.rowPins_count; i++) {
+        Pin_t pin = -1;
+        if (!claimedPins.count(matrix.rowPins[i])) cleanAddonGpioMappings(pin, matrix.rowPins[i]);
+    }
+    for (pb_size_t i = 0; i < matrix.colPins_count; i++) {
+        Pin_t pin = -1;
+        if (!claimedPins.count(matrix.colPins[i])) cleanAddonGpioMappings(pin, matrix.colPins[i]);
+    }
+    for (int32_t pin : claimedPins) {
+        Pin_t claimed = pin;
+        cleanAddonGpioMappings(claimed, -1);
+    }
+
+    matrix.rowPins_count = 0;
+    for (int32_t pin : rowPins) matrix.rowPins[matrix.rowPins_count++] = pin;
+    matrix.colPins_count = 0;
+    for (int32_t pin : colPins) matrix.colPins[matrix.colPins_count++] = pin;
+
+    // switch mappings of every profile: profile 1 is the base mappings, profiles
+    // 2-6 either have their own ("custom") or use profile 1's
+    ProfileOptions& profileOptions = Storage::getInstance().getProfileOptions();
+    GpioMappings& base = Storage::getInstance().getGpioMappings();
+    size_t profileIndex = 0;
+    for (JsonVariantConst profile : doc["profiles"].as<JsonArrayConst>()) {
+        if (profileIndex > std::size(profileOptions.gpioMappingsSets)) break;
+        GpioMappings& mappings = profileIndex == 0 ? base : profileOptions.gpioMappingsSets[profileIndex - 1];
+        profileIndex++;
+        if (&mappings != &base && !profile["custom"].as<bool>()) {
+            mappings.matrixSwitchActions_count = 0;
+            mappings.matrixSwitchButtonMasks_count = 0;
+            continue;
+        }
+        JsonArrayConst actions = profile["actions"].as<JsonArrayConst>();
+        JsonArrayConst buttonMasks = profile["buttonMasks"].as<JsonArrayConst>();
+        for (pb_size_t i = 0; i < std::size(mappings.matrixSwitchActions); i++) {
+            const uint32_t packed = i < actions.size() ? actions[i].as<uint32_t>() : 0;
+            // switches are plain inputs; they can't be reserved or handed to an add-on
+            const GpioMappingInfo info = unpackSwitchMapping(packed, 0);
+            mappings.matrixSwitchActions[i] = packSwitchAction(info.action, info.customDpadMask);
+            mappings.matrixSwitchButtonMasks[i] = i < buttonMasks.size() ? buttonMasks[i].as<uint32_t>() : 0;
+        }
+        mappings.matrixSwitchActions_count = std::size(mappings.matrixSwitchActions);
+        mappings.matrixSwitchButtonMasks_count = std::size(mappings.matrixSwitchButtonMasks);
+    }
+
+    EventManager::getInstance().triggerEvent(new GPStorageSaveEvent(true));
     return serialize_json(doc);
 }
 
@@ -3366,6 +3519,8 @@ static const std::pair<const char*, HandlerFuncPtr> handlerFuncs[] =
     { "/api/getI2CPeripheralMap", getI2CPeripheralMap },
     { "/api/setExpansionPins", setExpansionPins },
     { "/api/getExpansionPins", getExpansionPins },
+    { "/api/getKeyMatrixOptions", getKeyMatrixOptions },
+    { "/api/setKeyMatrixOptions", setKeyMatrixOptions },
     { "/api/setHETriggerCalibrations", setHETriggerCalibrations },
     { "/api/getHETriggerCalibrations", getHETriggerCalibrations },
     { "/api/getHETriggerVoltage", getHETriggerVoltage },

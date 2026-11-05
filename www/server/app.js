@@ -936,6 +936,57 @@ app.get('/api/getLightsPresets/5', (req, res) => res.send({}));
 app.get('/api/getLightsPresets/6', (req, res) => res.send({}));
 app.get('/api/getLightsPresets/7', (req, res) => res.send({}));
 
+app.get('/api/getKeyMatrixOptions', (req, res) => {
+	return res.send({
+		enabled: true,
+		settleMicros: 5,
+		rowDelayMicros: 50,
+		firstVirtualPin: 30,
+		rowPins: [16, 17, 18, 19],
+		colPins: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+		// switch mappings per profile, packed: action + 10 | d-pad mask << 8
+		profiles: Array.from({ length: 6 }, (_, profile) => {
+			const custom = profile === 0 || profile === 1;
+			const actions = [
+				...[11, 12, 6, 5, 9, 10, 8, 7, 3, 4, 2, 1, 17, 18, 41, 42],
+				40,
+				...Array(27).fill(-10),
+			];
+			if (profile === 1) actions[0] = 12;
+			return {
+				custom,
+				actions: custom ? actions.map((action) => action + 10) : [],
+				buttonMasks: custom ? actions.map((_, i) => (i === 16 ? 3 : 0)) : [],
+			};
+		}),
+		switchPins: [
+			5,
+			6,
+			7,
+			8,
+			9,
+			10,
+			11,
+			12,
+			13,
+			14,
+			15,
+			16,
+			17,
+			18,
+			19,
+			...Array(29)
+				.fill(0)
+				.map((_, i) => 30 + i),
+		],
+	});
+});
+
+app.post('/api/setKeyMatrixOptions', (req, res) => {
+	console.log(req.body);
+	return res.send(req.body);
+});
+
 app.get('/api/getExpansionPins', (req, res) => {
 	return res.send({
 		pins: {
@@ -1459,7 +1510,9 @@ app.get('/api/getBootModeOptions', (req, res) => {
 	return res.send({
 		enabled: false,
 		webConfigPinMask: 1,
+		webConfigPinMaskHigh: 0,
 		usbModePinMask: 14,
+		usbModePinMaskHigh: 1,
 		inputModeMappings: [
 			{
 				pinMask: 2,

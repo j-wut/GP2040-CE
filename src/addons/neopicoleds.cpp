@@ -340,7 +340,7 @@ void NeoPicoLEDAddon::process()
 		bool isPressed = false;
 		switch(thisLight.InputSource)
 		{
-			case LightInputSource::LightInputSource_GPIO:       isPressed = isValidPin(thisLight.InputIndex) && ((gpioValues >> thisLight.InputIndex) & 1ULL); break;
+			case LightInputSource::LightInputSource_GPIO:       isPressed = thisLight.InputIndex < NUM_INPUT_PINS && ((gpioValues >> thisLight.InputIndex) & 1ULL); break;
 			case LightInputSource::LightInputSource_HallEffect: isPressed = thisLight.InputIndex < 32 && ((heValues >> thisLight.InputIndex) & 1u); break;
 			default: break;
 		}

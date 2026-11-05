@@ -60,7 +60,7 @@ void ButtonLayoutScreen::init() {
     hasTurboAssigned = false;
     // Macro Button initialized by void Gamepad::setup()
     GpioMappingInfo* pinMappings = Storage::getInstance().getProfilePinMappings();
-    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+    for (Pin_t pin = 0; pin < (Pin_t)NUM_INPUT_PINS; pin++)
     {
         switch( pinMappings[pin].action ) {
             case GpioAction::BUTTON_PRESS_MACRO:

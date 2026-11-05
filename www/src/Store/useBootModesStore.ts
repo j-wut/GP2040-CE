@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { INPUT_MODE_OPTIONS } from '../Data/InputBootModes';
-import WebApi, { baseUrl } from '../Services/WebApi';
+import WebApi from '../Services/WebApi';
 import { InputMode } from '@proto/enums';
 import { nanoid } from 'nanoid';
 
@@ -38,25 +38,34 @@ type Actions = {
 	validateRequired: (errorMessage: string) => boolean;
 };
 
+// Masks cover pins 0-31; the High masks cover pins 32-63 (keyboard matrix switches).
 type APIResponseData = {
 	webConfigPinMask: number;
+	webConfigPinMaskHigh?: number;
 	usbModePinMask: number;
+	usbModePinMaskHigh?: number;
 	enabled: boolean;
 	inputModeMappings: {
 		pinMask: number;
+		pinMaskHigh?: number;
 		inputMode: number;
 		// Profiles are 1-indexed. 0 = no mapped profile
 		profileNumber: number;
 	}[];
 };
 
-function maskToSet(mask: number, maxPins: number) {
+// Input pins the firmware tracks (real GPIOs plus keyboard matrix switches)
+const NUM_PINS = 64;
+
+function maskToSet(mask: number, maskHigh: number = 0) {
 	let s = new Set<number>();
-	if (mask === -1) {
+	// -1 with no high pins marks an empty mapping
+	if (mask === -1 && !maskHigh) {
 		return s;
 	}
-	for (let i = 0; i < maxPins; i++) {
-		if ((1 << i) & mask) {
+	for (let i = 0; i < NUM_PINS; i++) {
+		const bits = i < 32 ? mask : maskHigh;
+		if ((1 << i % 32) & bits) {
 			s.add(i);
 		}
 	}
@@ -65,18 +74,26 @@ function maskToSet(mask: number, maxPins: number) {
 
 function setToMask(pins: Set<number>) {
 	if (pins.size == 0) {
-		return -1;
+		return { mask: -1, maskHigh: 0 };
 	}
-	return [...pins].reduce((mask, v) => mask | (1 << v), 0);
+	let mask = 0;
+	let maskHigh = 0;
+	for (const pin of pins) {
+		if (pin < 32) mask |= 1 << pin;
+		else maskHigh |= 1 << (pin - 32);
+	}
+	// pins 32-63 are sent unsigned
+	return { mask, maskHigh: maskHigh >>> 0 };
 }
 
 function findDuplicates(bootModes: { [key: string]: BootModeMapping }) {
-	let seen: { [key: number]: string[] } = {};
+	let seen: { [key: string]: string[] } = {};
 	for (const [key, mapping] of Object.entries(bootModes)) {
-		let mask = setToMask(mapping.pins);
-		if (mask == -1) {
+		if (mapping.pins.size == 0) {
 			continue;
 		}
+		const { mask: low, maskHigh } = setToMask(mapping.pins);
+		const mask = `${low}:${maskHigh}`;
 		if (!(mask in seen)) {
 			seen[mask] = [key];
 		} else {
@@ -142,11 +159,6 @@ export const useBootModeStore = create<State & { actions: Actions }>()(
 				set({ loadingBootModes: true });
 				let response: APIResponseData;
 
-				const [boardDefinition] = await Promise.all([
-					fetch(`${baseUrl}/api/getBoardDefinition`).then((res) => res.json()),
-				]);
-
-				const NUM_PINS = boardDefinition.maxPin + 1;
 				try {
 					let { data } = await WebApi.getBootModeOptions();
 					response = data;
@@ -168,7 +180,7 @@ export const useBootModeStore = create<State & { actions: Actions }>()(
 						continue;
 					}
 					inputModes[`inputMode-${nanoid()}`] = {
-						pins: maskToSet(m.pinMask, NUM_PINS),
+						pins: maskToSet(m.pinMask, m.pinMaskHigh),
 						inputMode: m.inputMode as InputMode,
 						profileIndex:
 							m.profileNumber == 0 ? undefined : m.profileNumber - 1,
@@ -181,12 +193,12 @@ export const useBootModeStore = create<State & { actions: Actions }>()(
 					enabled: !!enabled,
 					bootModes: {
 						webConfig: {
-							pins: maskToSet(webConfigPinMask, NUM_PINS),
+							pins: maskToSet(webConfigPinMask, response.webConfigPinMaskHigh),
 							inputMode: undefined,
 							profileIndex: undefined,
 						},
 						usbMode: {
-							pins: maskToSet(usbModePinMask, NUM_PINS),
+							pins: maskToSet(usbModePinMask, response.usbModePinMaskHigh),
 							inputMode: undefined,
 							profileIndex: undefined,
 						},
@@ -198,14 +210,19 @@ export const useBootModeStore = create<State & { actions: Actions }>()(
 			saveBootModeOptions: async (errorMessage: string) => {
 				const { bootModes, enabled } = get();
 				set({ saveAttempted: true });
+				const webConfig = setToMask(bootModes['webConfig'].pins);
+				const usbMode = setToMask(bootModes['usbMode'].pins);
 				const postData: APIResponseData = {
-					webConfigPinMask: setToMask(bootModes['webConfig'].pins),
-					usbModePinMask: setToMask(bootModes['usbMode'].pins),
+					webConfigPinMask: webConfig.mask,
+					webConfigPinMaskHigh: webConfig.maskHigh,
+					usbModePinMask: usbMode.mask,
+					usbModePinMaskHigh: usbMode.maskHigh,
 					enabled: enabled,
 					inputModeMappings: Object.entries(bootModes)
 						.filter(([k, _v], _i) => k.startsWith('inputMode-'))
 						.map(([_, m], _i) => ({
-							pinMask: setToMask(m.pins),
+							pinMask: setToMask(m.pins).mask,
+							pinMaskHigh: setToMask(m.pins).maskHigh,
 							inputMode: m.inputMode === undefined ? 0 : m.inputMode,
 							profileNumber:
 								m.profileIndex === undefined ? 0 : m.profileIndex + 1,

@@ -39,6 +39,7 @@
 #include "addons/gamepad_usb_host.h"
 #include "addons/he_trigger.h"
 #include "addons/tg16_input.h"
+#include "keymatrix.h"
 
 #include "CRC32.h"
 #include "FlashPROM.h"
@@ -780,10 +781,10 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
         INIT_UNSET_PROPERTY(config.animationOptions.profiles[0], basePressedEffect, LEDS_PROFILE0_PRESSED_ANIMATION_INDEX);
         INIT_UNSET_PROPERTY(config.animationOptions.profiles[0], baseCaseEffect, LEDS_PROFILE0_CASE_ANIMATION_INDEX);
         INIT_UNSET_PROPERTY(config.animationOptions.profiles[0], bUseCaseLightsInPressedAnimations, LEDS_PROFILE0_USE_CASE_IN_PRESSED);
-        unsigned char localBuffer[NUM_BANK0_GPIOS];
-        memset(localBuffer, LEDS_PROFILE0_STATIC_COLOR_UNPRESSED, NUM_BANK0_GPIOS);
+        unsigned char localBuffer[NUM_INPUT_PINS];
+        memset(localBuffer, LEDS_PROFILE0_STATIC_COLOR_UNPRESSED, NUM_INPUT_PINS);
         INIT_UNSET_PROPERTY_BYTES(config.animationOptions.profiles[0], notPressedStaticColors, localBuffer);
-        memset(localBuffer, LEDS_PROFILE0_STATIC_COLOR_PRESSED, NUM_BANK0_GPIOS);
+        memset(localBuffer, LEDS_PROFILE0_STATIC_COLOR_PRESSED, NUM_INPUT_PINS);
         INIT_UNSET_PROPERTY_BYTES(config.animationOptions.profiles[0], pressedStaticColors, localBuffer);
         unsigned char localCaseBuffer[MAX_NON_BUTTON_LIGHT_COLOR_INDEXES];
         memset(localCaseBuffer, LEDS_PROFILE0_STATIC_COLOR_CASE, NUM_BANK0_GPIOS);
@@ -807,9 +808,9 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
         INIT_UNSET_PROPERTY(config.animationOptions.profiles[1], basePressedEffect, LEDS_PROFILE1_PRESSED_ANIMATION_INDEX);
         INIT_UNSET_PROPERTY(config.animationOptions.profiles[1], baseCaseEffect, LEDS_PROFILE1_CASE_ANIMATION_INDEX);
         INIT_UNSET_PROPERTY(config.animationOptions.profiles[1], bUseCaseLightsInPressedAnimations, LEDS_PROFILE1_USE_CASE_IN_PRESSED);
-        memset(localBuffer, LEDS_PROFILE1_STATIC_COLOR_UNPRESSED, NUM_BANK0_GPIOS);
+        memset(localBuffer, LEDS_PROFILE1_STATIC_COLOR_UNPRESSED, NUM_INPUT_PINS);
         INIT_UNSET_PROPERTY_BYTES(config.animationOptions.profiles[1], notPressedStaticColors, localBuffer);
-        memset(localBuffer, LEDS_PROFILE1_STATIC_COLOR_PRESSED, NUM_BANK0_GPIOS);
+        memset(localBuffer, LEDS_PROFILE1_STATIC_COLOR_PRESSED, NUM_INPUT_PINS);
         INIT_UNSET_PROPERTY_BYTES(config.animationOptions.profiles[1], pressedStaticColors, localBuffer);
         memset(localCaseBuffer, LEDS_PROFILE1_STATIC_COLOR_CASE, NUM_BANK0_GPIOS);
         INIT_UNSET_PROPERTY_BYTES(config.animationOptions.profiles[1], nonButtonStaticColors, localCaseBuffer);
@@ -832,9 +833,9 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
         INIT_UNSET_PROPERTY(config.animationOptions.profiles[2], basePressedEffect, LEDS_PROFILE2_PRESSED_ANIMATION_INDEX);
         INIT_UNSET_PROPERTY(config.animationOptions.profiles[2], baseCaseEffect, LEDS_PROFILE2_CASE_ANIMATION_INDEX);
         INIT_UNSET_PROPERTY(config.animationOptions.profiles[2], bUseCaseLightsInPressedAnimations, LEDS_PROFILE2_USE_CASE_IN_PRESSED);
-        memset(localBuffer, LEDS_PROFILE2_STATIC_COLOR_UNPRESSED, NUM_BANK0_GPIOS);    
+        memset(localBuffer, LEDS_PROFILE2_STATIC_COLOR_UNPRESSED, NUM_INPUT_PINS);
         INIT_UNSET_PROPERTY_BYTES(config.animationOptions.profiles[2], notPressedStaticColors, localBuffer);
-        memset(localBuffer, LEDS_PROFILE2_STATIC_COLOR_PRESSED, NUM_BANK0_GPIOS);
+        memset(localBuffer, LEDS_PROFILE2_STATIC_COLOR_PRESSED, NUM_INPUT_PINS);
         INIT_UNSET_PROPERTY_BYTES(config.animationOptions.profiles[2], pressedStaticColors, localBuffer);
         memset(localCaseBuffer, LEDS_PROFILE2_STATIC_COLOR_CASE, NUM_BANK0_GPIOS);
         INIT_UNSET_PROPERTY_BYTES(config.animationOptions.profiles[2], nonButtonStaticColors, localCaseBuffer);
@@ -857,9 +858,9 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
         INIT_UNSET_PROPERTY(config.animationOptions.profiles[3], basePressedEffect, LEDS_PROFILE3_PRESSED_ANIMATION_INDEX);
         INIT_UNSET_PROPERTY(config.animationOptions.profiles[3], baseCaseEffect, LEDS_PROFILE3_CASE_ANIMATION_INDEX);
         INIT_UNSET_PROPERTY(config.animationOptions.profiles[3], bUseCaseLightsInPressedAnimations, LEDS_PROFILE3_USE_CASE_IN_PRESSED);
-        memset(localBuffer, LEDS_PROFILE3_STATIC_COLOR_UNPRESSED, NUM_BANK0_GPIOS);
+        memset(localBuffer, LEDS_PROFILE3_STATIC_COLOR_UNPRESSED, NUM_INPUT_PINS);
         INIT_UNSET_PROPERTY_BYTES(config.animationOptions.profiles[3], notPressedStaticColors, localBuffer);
-        memset(localBuffer, LEDS_PROFILE3_STATIC_COLOR_PRESSED, NUM_BANK0_GPIOS);
+        memset(localBuffer, LEDS_PROFILE3_STATIC_COLOR_PRESSED, NUM_INPUT_PINS);
         INIT_UNSET_PROPERTY_BYTES(config.animationOptions.profiles[3], pressedStaticColors, localBuffer);
         memset(localCaseBuffer, LEDS_PROFILE3_STATIC_COLOR_CASE, NUM_BANK0_GPIOS);
         INIT_UNSET_PROPERTY_BYTES(config.animationOptions.profiles[3], nonButtonStaticColors, localCaseBuffer);
@@ -875,7 +876,17 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
         LEDS_PROFILE0_STATIC_COLOR_PRESSED, LEDS_PROFILE1_STATIC_COLOR_PRESSED,
         LEDS_PROFILE2_STATIC_COLOR_PRESSED, LEDS_PROFILE3_STATIC_COLOR_PRESSED };
     unsigned char extBuffer[MAX_EXT_INPUT_LIGHT_COLOR_INDEXES];
+    // configs saved before keyboard matrix switches had colors hold one color per
+    // real GPIO; give the switches above them the profile's default colors
+    const auto extendStaticColors = [](auto& colors, uint8_t color) {
+        while (colors.size < NUM_INPUT_PINS && colors.size < sizeof(colors.bytes))
+            colors.bytes[colors.size++] = color;
+    };
     for (int profileIndex = 0; profileIndex < MAX_ANIMATION_PROFILES; profileIndex++) {
+        if (config.animationOptions.profiles[profileIndex].has_notPressedStaticColors)
+            extendStaticColors(config.animationOptions.profiles[profileIndex].notPressedStaticColors, extNotPressedDefaults[profileIndex]);
+        if (config.animationOptions.profiles[profileIndex].has_pressedStaticColors)
+            extendStaticColors(config.animationOptions.profiles[profileIndex].pressedStaticColors, extPressedDefaults[profileIndex]);
         memset(extBuffer, extNotPressedDefaults[profileIndex], sizeof(extBuffer));
         INIT_UNSET_PROPERTY_BYTES(config.animationOptions.profiles[profileIndex], extNotPressedStaticColors, extBuffer);
         memset(extBuffer, extPressedDefaults[profileIndex], sizeof(extBuffer));
@@ -1489,6 +1500,49 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin1, TG16_PAD_DATA_PIN1);
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin2, TG16_PAD_DATA_PIN2);
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin3, TG16_PAD_DATA_PIN3);
+
+    // addonOptions.keyMatrixOptions
+    {
+        KeyMatrixOptions& matrix = config.addonOptions.keyMatrixOptions;
+        if (!matrix.has_enabled) {
+            const int32_t rowPins[] = { KEY_MATRIX_ROW_PINS };
+            const int32_t colPins[] = { KEY_MATRIX_COL_PINS };
+            matrix.rowPins_count = 0;
+            matrix.colPins_count = 0;
+            for (int32_t pin : rowPins) {
+                if (isValidPin(pin) && matrix.rowPins_count < std::size(matrix.rowPins))
+                    matrix.rowPins[matrix.rowPins_count++] = pin;
+            }
+            for (int32_t pin : colPins) {
+                if (isValidPin(pin) && matrix.colPins_count < std::size(matrix.colPins))
+                    matrix.colPins[matrix.colPins_count++] = pin;
+            }
+        }
+        INIT_UNSET_PROPERTY(matrix, enabled, !!KEY_MATRIX_ENABLED);
+        INIT_UNSET_PROPERTY(matrix, settleMicros, KEY_MATRIX_SETTLE_MICROS);
+        INIT_UNSET_PROPERTY(matrix, rowDelayMicros, KEY_MATRIX_ROW_DELAY_MICROS);
+
+        // the base profile holds a mapping for every switch; fill in any switch
+        // that has no stored action yet. Other profiles use the base profile's
+        // mapping until they get their own.
+        GpioMappings& base = config.gpioMappings;
+        const GpioAction pinActions[] = { KEY_MATRIX_PIN_ACTIONS };
+        for (pb_size_t i = base.matrixSwitchActions_count; i < std::size(base.matrixSwitchActions); i++) {
+            GpioAction action = i < std::size(pinActions) ? pinActions[i] : GpioAction::NONE;
+            base.matrixSwitchActions[i] = packSwitchAction(action, 0);
+        }
+        base.matrixSwitchActions_count = std::size(base.matrixSwitchActions);
+        for (pb_size_t i = base.matrixSwitchButtonMasks_count; i < std::size(base.matrixSwitchButtonMasks); i++)
+            base.matrixSwitchButtonMasks[i] = 0;
+        base.matrixSwitchButtonMasks_count = std::size(base.matrixSwitchButtonMasks);
+        for (GpioMappings& profile : config.profileOptions.gpioMappingsSets) {
+            // a profile needs both halves of its mapping, or uses the base one
+            if (profile.matrixSwitchActions_count != profile.matrixSwitchButtonMasks_count) {
+                profile.matrixSwitchActions_count = 0;
+                profile.matrixSwitchButtonMasks_count = 0;
+            }
+        }
+    }
 }
 
 
@@ -1989,6 +2043,27 @@ void gpioMappingsMigrationCore(Config& config)
     config.migrations.gpioMappingsMigrated = true;
 }
 
+// keyboard matrix row/column GPIOs belong to the matrix, never to a button mapping
+void reserveKeyMatrixPins(Config& config)
+{
+    const KeyMatrixOptions& matrix = config.addonOptions.keyMatrixOptions;
+    if (!matrix.enabled)
+        return;
+
+    const auto reserve = [&](int32_t pin) -> void {
+        if (!isValidPin(pin))
+            return;
+        if (pin < (int32_t)config.gpioMappings.pins_count)
+            config.gpioMappings.pins[pin].action = GpioAction::ASSIGNED_TO_ADDON;
+        for (pb_size_t i = 0; i < config.profileOptions.gpioMappingsSets_count; i++) {
+            if (pin < (int32_t)config.profileOptions.gpioMappingsSets[i].pins_count)
+                config.profileOptions.gpioMappingsSets[i].pins[pin].action = GpioAction::ASSIGNED_TO_ADDON;
+        }
+    };
+    for (pb_size_t i = 0; i < matrix.rowPins_count; i++) reserve(matrix.rowPins[i]);
+    for (pb_size_t i = 0; i < matrix.colPins_count; i++) reserve(matrix.colPins[i]);
+}
+
 // if the user previously had the JS slider addon enabled, copy its default to the
 // core gamepad setting, since the functionality is within the core now
 void migrateJSliderToCore(Config& config)
@@ -2346,6 +2421,8 @@ void ConfigUtils::load(Config& config)
     migrateMacroPinsToGpio(config);
     // Migrate old JS slider add-on to core
     migrateJSliderToCore(config);
+    // Keep keyboard matrix pins out of the button mappings
+    reserveKeyMatrixPins(config);
 
     // Update boardVersion, in case we migrated from an older version
     strncpy(config.boardVersion, GP2040VERSION, sizeof(config.boardVersion));
@@ -2991,6 +3068,7 @@ bool ConfigUtils::fromJSON(Config& config, const char* data, size_t dataLen)
     migrateTurboPinToGpio(config);
     migrateAuthenticationMethods(config);
     migrateMacroPinsToGpio(config);
+    reserveKeyMatrixPins(config);
 
     return true;
 }
